@@ -1,0 +1,20 @@
+{
+  "name": "SPOS Net — اختبار سرعة الإنترنت",
+  "short_name": "SPOS Net",
+  "description": "قياس فوري لسرعة التحميل والرفع وزمن الاستجابة وفقدان الحزم — مجاناً وبدون إعلانات.",
+  "id": "spos-net",
+  "start_url": "./",
+  "scope": "./",
+  "display": "standalone",
+  "orientation": "any",
+  "background_color": "#070f1c",
+  "theme_color": "#070f1c",
+  "lang": "ar",
+  "dir": "rtl",
+  "categories": ["utilities", "productivity"],
+  "icons": [
+    { "src": "assets/img/icon-192.png", "sizes": "192x192", "type": "image/png", "purpose": "any" },
+    { "src": "assets/img/icon-512.png", "sizes": "512x512", "type": "image/png", "purpose": "any" },
+    { "src": "assets/img/icon-512-maskable.png", "sizes": "512x512", "type": "image/png", "purpose": "maskable" }
+  ]
+}
