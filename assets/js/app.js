@@ -8,7 +8,7 @@ const $ = (s, r = document) => r.querySelector(s);
 const $$ = (s, r = document) => [...r.querySelectorAll(s)];
 
 const SITE_URL = 'https://spos-systems.github.io/SPOS-Net/';
-const VERSION = '2.0.0';
+const VERSION = '2.1.0';
 
 const DEFAULTS = { lang: 'ar', unit: 'mbps', duration: 12, streams: 8, loaded: true, loss: true };
 
@@ -137,6 +137,119 @@ function setReadout(valueText, unitText) {
   $('#g-unit').textContent = unitText;
 }
 
+/* ── live speed graph ───────────────────────────────────── */
+
+function niceMax(v) {
+  if (!(v > 0)) return 1;
+  const p = Math.pow(10, Math.floor(Math.log10(v)));
+  for (const m of [1, 2, 5, 10]) if (m * p >= v) return m * p;
+  return 10 * p;
+}
+
+const SPARK = {
+  cv: null, ctx: null, w: 0, h: 0, dpr: 1,
+  t0: 0, samples: [], marks: [],
+
+  init(cv) {
+    this.cv = cv;
+    this.ctx = cv.getContext('2d');
+    addEventListener('resize', () => {
+      if (!cv.hidden) { this.resize(); this.draw(); }
+    });
+  },
+  reset() { this.samples = []; this.marks = []; this.cv.hidden = true; },
+  begin() {
+    this.t0 = performance.now();
+    this.samples = [];
+    this.marks = [];
+    this.cv.hidden = false;
+    this.resize();
+    this.draw();
+  },
+  mark(kind) { this.marks.push([performance.now() - this.t0, kind]); },
+  add(kind, v) { this.samples.push([performance.now() - this.t0, kind, v]); this.draw(); },
+
+  resize() {
+    const r = this.cv.getBoundingClientRect();
+    if (!r.width || !r.height) return;
+    this.dpr = Math.min(2, devicePixelRatio || 1);
+    this.w = r.width;
+    this.h = r.height;
+    this.cv.width = Math.round(r.width * this.dpr);
+    this.cv.height = Math.round(r.height * this.dpr);
+  },
+
+  draw() {
+    const { ctx, w, h } = this;
+    if (!ctx || !w) return;
+    ctx.setTransform(this.dpr, 0, 0, this.dpr, 0, 0);
+    ctx.clearRect(0, 0, w, h);
+    if (!this.samples.length) return;
+
+    const tEnd = Math.max(4000, this.samples[this.samples.length - 1][0]);
+    let vMax = 0;
+    for (const s of this.samples) if (s[2] > vMax) vMax = s[2];
+    const max = niceMax(vMax * 1.12 || 1);
+    const X = (t) => (t / tEnd) * w;
+    const Y = (v) => h - (v / max) * (h - 8) - 3;
+
+    /* faint grid */
+    ctx.lineWidth = 1;
+    ctx.strokeStyle = 'rgba(233,237,245,.05)';
+    for (const f of [0.25, 0.5, 0.75]) {
+      const y = Y(max * f);
+      ctx.beginPath(); ctx.moveTo(0, y); ctx.lineTo(w, y); ctx.stroke();
+    }
+
+    /* download → upload divider */
+    const up = this.marks.find((m) => m[1] === 'upload');
+    if (up) {
+      ctx.strokeStyle = 'rgba(233,237,245,.09)';
+      ctx.setLineDash([3, 4]);
+      ctx.beginPath(); ctx.moveTo(X(up[0]), 0); ctx.lineTo(X(up[0]), h); ctx.stroke();
+      ctx.setLineDash([]);
+    }
+
+    /* series: download (blue) then upload (violet) */
+    for (const [kind, color, fill] of [
+      ['down', '#4f9df0', 'rgba(79,157,240,.24)'],
+      ['up', '#9d86f2', 'rgba(157,134,242,.22)'],
+    ]) {
+      const pts = this.samples.filter((s) => s[1] === kind);
+      if (pts.length < 2) continue;
+      /* area */
+      ctx.beginPath();
+      ctx.moveTo(X(pts[0][0]), Y(pts[0][2]));
+      for (const p of pts) ctx.lineTo(X(p[0]), Y(p[2]));
+      ctx.lineTo(X(pts[pts.length - 1][0]), h);
+      ctx.lineTo(X(pts[0][0]), h);
+      ctx.closePath();
+      const g = ctx.createLinearGradient(0, 0, 0, h);
+      g.addColorStop(0, fill);
+      g.addColorStop(1, 'rgba(0,0,0,0)');
+      ctx.fillStyle = g;
+      ctx.fill();
+      /* line */
+      ctx.beginPath();
+      ctx.moveTo(X(pts[0][0]), Y(pts[0][2]));
+      for (const p of pts) ctx.lineTo(X(p[0]), Y(p[2]));
+      ctx.strokeStyle = color;
+      ctx.lineWidth = 1.6;
+      ctx.lineJoin = 'round';
+      ctx.stroke();
+    }
+
+    /* scale label (top-left, always LTR) */
+    const unit = t(`u.${settings.unit}`);
+    const disp = settings.unit === 'mbytes' ? max / 8 : settings.unit === 'kbps' ? max * 1000 : max;
+    ctx.fillStyle = 'rgba(154,164,184,.75)';
+    ctx.font = '10px "IBM Plex Mono", ui-monospace, monospace';
+    ctx.textAlign = 'left';
+    ctx.textBaseline = 'alphabetic';
+    ctx.fillText(`${Math.round(disp)} ${unit}`, 6, 12);
+  },
+};
+
 /* ── run lifecycle ───────────────────────────────────────── */
 
 function setGrade(score) {
@@ -151,7 +264,13 @@ function resetUI() {
   html.dataset.ph = '';
   delete html.dataset.ph;
   $$('.ph').forEach((p) => p.classList.remove('active', 'done'));
-  $$('.metric').forEach((m) => { m.classList.remove('on'); m.querySelector('.num').textContent = '—'; });
+  $$('.metric').forEach((m) => {
+    m.classList.remove('on');
+    const n = m.querySelector('.num');
+    n.textContent = '—';
+    n.classList.remove('good', 'mid', 'low');
+  });
+  SPARK.reset();
   $('#m-download .unit').textContent = t(`u.${settings.unit}`);
   $('#m-upload .unit').textContent = t(`u.${settings.unit}`);
   $('#g-readout').hidden = true;
@@ -195,7 +314,11 @@ async function startTest() {
 
   const runSettings = { ...settings, meta: state.meta };
   const hooks = {
-    phase: phaseUI,
+    phase: (ph) => {
+      phaseUI(ph);
+      if (ph === 'ping') SPARK.begin();
+      else if (ph) SPARK.mark(ph);
+    },
     pingSample: (done, total, ms, med) => {
       gauge.setProgress(done / total);
       setGaugeLabel('ping');
@@ -215,6 +338,7 @@ async function startTest() {
     },
     loadedSample: () => { /* aggregated into details */ },
     sample: (kind, instant) => {
+      SPARK.add(kind, instant);
       if (kind === 'down') {
         gauge.setValue(instant);
         setReadout(fmtSpeed(instant), t(`u.${settings.unit}`));
@@ -248,6 +372,15 @@ function updateRunTitle(v) {
   }, 400);
 }
 
+/* quality tint for latency-family metrics */
+function qCls(kind, v) {
+  if (v == null || isNaN(v)) return '';
+  if (kind === 'ping') return v <= 40 ? 'good' : v <= 90 ? 'mid' : 'low';
+  if (kind === 'jitter') return v <= 10 ? 'good' : v <= 25 ? 'mid' : 'low';
+  if (kind === 'loss') return v <= 0.5 ? 'good' : v <= 2 ? 'mid' : 'low';
+  return '';
+}
+
 function finishTest(result) {
   state.result = result;
   setState('done');
@@ -260,10 +393,14 @@ function finishTest(result) {
   gauge.setValue(result.download.avg);
   setReadout(fmtSpeed(result.download.avg), t(`u.${settings.unit}`));
 
-  $('#m-ping .num').textContent = fmtMs(result.ping.med);
-  $('#m-jitter .num').textContent = fmtMs(result.ping.jitter);
-  const lossEl = $('#m-loss');
-  lossEl.querySelector('.num').textContent = result.loss.pct == null ? '—' : result.loss.pct.toFixed(1);
+  const setNum = (id, text, kind, v) => {
+    const n = $(id + ' .num');
+    n.textContent = text;
+    n.className = 'num ' + qCls(kind, v);
+  };
+  setNum('#m-ping', fmtMs(result.ping.med), 'ping', result.ping.med);
+  setNum('#m-jitter', fmtMs(result.ping.jitter), 'jitter', result.ping.jitter);
+  setNum('#m-loss', result.loss.pct == null ? '—' : result.loss.pct.toFixed(1), 'loss', result.loss.pct);
   $('#m-download .num').textContent = fmtSpeed(result.download.avg);
   $('#m-upload .num').textContent = fmtSpeed(result.upload.avg);
 
@@ -306,6 +443,28 @@ export function capabilitiesOf(r) {
   ];
 }
 
+/* bufferbloat: latency increase under load → A+ … F */
+export function bloatOf(r) {
+  const s = r.loaded?.samples;
+  if (!s || !s.length) return null;
+  const avg = s.reduce((a, b) => a + b, 0) / s.length;
+  const inc = Math.max(0, avg - (r.ping.med || 0));
+  const grade = inc <= 5 ? 'A+' : inc <= 30 ? 'A' : inc <= 60 ? 'B' : inc <= 150 ? 'C' : inc <= 300 ? 'D' : 'F';
+  return {
+    avg, inc, grade,
+    cls: grade.startsWith('A') ? 'good' : grade === 'B' || grade === 'C' ? 'mid' : 'low',
+  };
+}
+
+/* one-line human verdict for the details drawer */
+export function verdictOf(r) {
+  const g = scoreOf(r).grade;
+  let text = t(`v.${g === 'exc' || g === 'vg' ? 'exc' : g}`);
+  const bl = bloatOf(r);
+  if (bl && (bl.grade === 'D' || bl.grade === 'F')) text += ' ' + t('v.bloat');
+  return text;
+}
+
 /* ── details drawer ──────────────────────────────────────── */
 
 function statRow(k, v) {
@@ -324,9 +483,16 @@ function renderDetails(r) {
   const loaded = r.loaded.samples.length
     ? `${fmtMs(r.loaded.samples.reduce((a, b) => a + b, 0) / r.loaded.samples.length)} / ${fmtMs(Math.max(...r.loaded.samples))} ms <small>(${r.loaded.samples.length} ${d.samples})</small>`
     : `<small>${d.loadedNo}</small>`;
+  const bl = bloatOf(r);
+  const bloatVal = bl
+    ? `<span style="color:var(--${bl.cls === 'good' ? 'ok' : bl.cls === 'mid' ? 'warn' : 'bad'})">${bl.grade}</span> <small>+${Math.round(bl.inc)} ms</small>`
+    : `<small>${d.loadedNo}</small>`;
   const loss = r.loss.pct == null
     ? `<small>${d.loadedNo}</small>`
     : `${r.loss.pct.toFixed(1)}% <small>(${r.loss.lost} ${d.failed} ${d.of} ${r.loss.sent})</small>`;
+  const consist = r.download.peak > 0
+    ? `${Math.round((r.download.avg / r.download.peak) * 100)}%`
+    : '—';
   const meta = r.meta || {};
   const server = `Cloudflare${meta.colo ? ' · ' + meta.colo : ''}${meta.coloCity ? ' — ' + meta.coloCity : ''}`;
   const conn = [meta.ip, meta.org || (meta.asn ? 'AS' + meta.asn : '')].filter(Boolean).join(' · ');
@@ -336,6 +502,7 @@ function renderDetails(r) {
     statRow(d.dlPeak, `${fmtSpeed(r.download.peak)} <small>${t(`u.${settings.unit}`)}</small>`),
     statRow(d.ulAvg, `${fmtSpeed(r.upload.avg)} <small>${t(`u.${settings.unit}`)}</small>`),
     statRow(d.ulPeak, `${fmtSpeed(r.upload.peak)} <small>${t(`u.${settings.unit}`)}</small>`),
+    statRow(d.consistency, consist),
     statRow(d.vol, `${MB(r.download.bytes + r.upload.bytes)} MB`),
     statRow(d.dur, `~${Math.round((r.download.ms + r.upload.ms) / 1000)}s + ${L === 'ar' ? 'الاستجابة' : 'ping'}`),
     statRow(d.pingMin, `${fmtMs(r.ping.min)} ms`),
@@ -345,6 +512,7 @@ function renderDetails(r) {
     statRow(d.jitter, `${fmtMs(r.ping.jitter)} ms`),
     statRow(d.loss, loss),
     statRow(d.loaded, loaded),
+    statRow(d.bloat, bloatVal),
     statRow(d.server, server),
     statRow(d.proto, meta.proto || '—'),
     statRow(d.conn, conn || '—'),
@@ -375,6 +543,7 @@ function renderDetails(r) {
       <div class="score-side">
         <div class="score-grade">${t(`grade.${score.grade}`)}<span style="color:var(--txt-3);font-weight:400"> · 0–100</span></div>
         <div class="score-bar"><i style="width:${score.score}%"></i></div>
+        <p class="verdict">${verdictOf(r)}</p>
       </div>
     </div>
     <div>
@@ -648,6 +817,16 @@ async function nativeShare(r) {
   } catch { /* user cancelled */ }
 }
 
+/* compact one-liner for character-limited share targets */
+function shortText(r) {
+  const c = r.sharedCompact || compact(r);
+  return `\u200ESPOS Net — \u2193${fmtSpeed(c.dl)} \u2191${fmtSpeed(c.ul)} Mbps · Ping ${fmtMs(c.pg)} ms · ${c.sc}/100`;
+}
+
+function openShare(url) {
+  window.open(url, '_blank', 'noopener,noreferrer');
+}
+
 /* ── shared-result view ──────────────────────────────────── */
 
 function clearShared() {
@@ -677,6 +856,9 @@ function trySharedView() {
     $('#m-ping .num').textContent = fmtMs(r.ping.med);
     $('#m-jitter .num').textContent = fmtMs(r.ping.jitter);
     $('#m-loss .num').textContent = c.ls == null ? '—' : c.ls.toFixed(1);
+    $('#m-ping .num').className = 'num ' + qCls('ping', r.ping.med);
+    $('#m-jitter .num').className = 'num ' + qCls('jitter', r.ping.jitter);
+    $('#m-loss .num').className = 'num ' + qCls('loss', c.ls);
     $('#m-download .num').textContent = fmtSpeed(r.download.avg);
     $('#m-upload .num').textContent = fmtSpeed(r.upload.avg);
     $$('.metric').forEach((el) => el.classList.add('on'));
@@ -756,14 +938,36 @@ function bindSettings() {
 
 /* ── boot ────────────────────────────────────────────────── */
 
+/* first visit: follow the browser language (saved choice wins) */
+function detectLang() {
+  try { if (localStorage.getItem('sposnet.settings')) return null; } catch { /* private mode */ }
+  const ls = navigator.languages && navigator.languages.length ? navigator.languages : [navigator.language || 'ar'];
+  return ls.some((l) => l && l.toLowerCase().startsWith('ar')) ? 'ar' : 'en';
+}
+
+function toggleDrawer(id) {
+  const dr = $(id);
+  dr.classList.contains('open') ? closeDrawers() : openDrawer(id);
+}
+
 function boot() {
+  /* URL params: ?lang=ar|en · ?auto=1 (kiosk/embed autostart) */
+  const qp = new URLSearchParams(location.search);
+  const qLang = qp.get('lang');
+  const detected = detectLang();
+  if (qLang === 'ar' || qLang === 'en') settings.lang = qLang;
+  else if (detected) settings.lang = detected;
+  if (qLang || detected) saveSettings();
+
   setLang(settings.lang);
   gauge = new Gauge($('#gauge-svg'));
+  SPARK.init($('#spark'));
   engine = new Engine({});
   applyLang();
   reflectSettings();
   bindSettings();
   resetUI();
+  $('#ver-tag').textContent = `SPOS Net v${VERSION}`;
 
   /* single rAF loop for the gauge */
   let last = performance.now();
@@ -801,10 +1005,65 @@ function boot() {
   $('#mi-text').addEventListener('click', () => { closeShareMenu(); if (state.result) copyText(summaryText(state.result)); });
   $('#mi-png').addEventListener('click', () => { closeShareMenu(); exportPng(); });
   $('#mi-json').addEventListener('click', () => { closeShareMenu(); exportJson(); });
+  $('#mi-wa').addEventListener('click', () => {
+    closeShareMenu();
+    if (!state.result) return;
+    openShare(`https://wa.me/?text=${encodeURIComponent(shortText(state.result) + '\n' + resultLink(state.result))}`);
+  });
+  $('#mi-x').addEventListener('click', () => {
+    closeShareMenu();
+    if (!state.result) return;
+    openShare(`https://twitter.com/intent/tweet?text=${encodeURIComponent(shortText(state.result))}&url=${encodeURIComponent(resultLink(state.result))}`);
+  });
+  $('#mi-tg').addEventListener('click', () => {
+    closeShareMenu();
+    if (!state.result) return;
+    openShare(`https://t.me/share/url?url=${encodeURIComponent(resultLink(state.result))}&text=${encodeURIComponent(shortText(state.result))}`);
+  });
   if (navigator.share) {
     $('#mi-native').hidden = false;
     $('#mi-native').addEventListener('click', () => { closeShareMenu(); if (state.result) nativeShare(state.result); });
   }
+
+  /* PWA install */
+  let installEvt = null;
+  window.addEventListener('beforeinstallprompt', (e) => {
+    e.preventDefault();
+    installEvt = e;
+    $('#btn-install').hidden = false;
+  });
+  $('#btn-install').addEventListener('click', async () => {
+    if (!installEvt) return;
+    installEvt.prompt();
+    await installEvt.userChoice.catch(() => {});
+    installEvt = null;
+    $('#btn-install').hidden = true;
+  });
+  window.addEventListener('appinstalled', () => {
+    installEvt = null;
+    $('#btn-install').hidden = true;
+    toast(t('t.installed'));
+  });
+
+  /* keyboard shortcuts: Space · S · D (ignored while typing or in dialogs) */
+  window.addEventListener('keydown', (e) => {
+    if (e.ctrlKey || e.metaKey || e.altKey) return;
+    const tag = e.target.tagName;
+    if (tag === 'INPUT' || tag === 'TEXTAREA' || e.target.isContentEditable) return;
+    const anyOpen = $$('.drawer').some((d) => d.classList.contains('open'));
+    if (e.code === 'Space') {
+      if (anyOpen || e.target.closest('button, a, [role="switch"]')) return;
+      e.preventDefault();
+      state.mode === 'running' ? engine.stop() : startTest();
+    } else if (e.key === 's' || e.key === 'S') {
+      toggleDrawer('#dr-settings');
+    } else if (e.key === 'd' || e.key === 'D') {
+      if (!state.result) return;
+      if (anyOpen && !$('#dr-details').classList.contains('open')) closeDrawers();
+      renderDetails(state.result);
+      toggleDrawer('#dr-details');
+    }
+  });
 
   $('#scrim').addEventListener('click', closeDrawers);
   $$('[data-close]').forEach((b) => b.addEventListener('click', closeDrawers));
@@ -817,7 +1076,10 @@ function boot() {
   });
 
   initMeta();
-  trySharedView();
+  const shared = trySharedView();
+  if (!shared && qp.get('auto') === '1') {
+    setTimeout(() => { if (state.mode === 'idle') startTest(); }, 900);
+  }
 }
 
 if (document.readyState === 'loading') document.addEventListener('DOMContentLoaded', boot);

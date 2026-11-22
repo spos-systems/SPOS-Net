@@ -1,6 +1,6 @@
 # SPOS Net — full documentation for AI crawlers
 
-SPOS Net (https://spos-systems.github.io/SPOS-Net/) is a free and open-source internet speed test, available in Arabic (default, right-to-left) and English, developed by SPOS — صولة للأنظمة (https://spos.ly) and released under the MIT license (source: https://github.com/spos-systems/SPOS-Net).
+SPOS Net (https://spos-systems.github.io/SPOS-Net/) is a free and open-source internet speed test, available in Arabic (right-to-left) and English, developed by SPOS — صولة للأنظمة (https://spos.ly) and released under the MIT license (source: https://github.com/spos-systems/SPOS-Net).
 
 ## What it measures
 
@@ -9,7 +9,9 @@ SPOS Net (https://spos-systems.github.io/SPOS-Net/) is a free and open-source in
 3. **Latency / ping (ms)** — Time-to-first-byte of empty (0-byte) requests, after a warm-up request. Twelve samples produce min, median, average and max. The median is shown as the headline ping.
 4. **Jitter (ms)** — Mean absolute difference between consecutive latency samples (RFC 3550-style inter-arrival variation, applied to HTTP RTT).
 5. **Estimated packet loss (%)** — A burst of 24 short timed requests (concurrency 6, timeout 2.8 s); the share of failed/timed-out requests approximates loss at the HTTP level. This is an estimate: browsers cannot emit ICMP, and TCP retransmissions are invisible to JavaScript.
-6. **Latency under load (ms)** — Additional 0-byte probes issued every ~0.9 s while download and upload streams saturate the line; the gap versus idle latency indicates bufferbloat.
+6. **Latency under load (ms)** — Additional 0-byte probes issued every ~0.9 s while download and upload streams saturate the line; the gap versus idle latency is graded A+ (≤5 ms), A (≤30 ms), B (≤60 ms), C (≤150 ms), D (≤300 ms) or F (>300 ms) as a bufferbloat indicator.
+7. **Live speed graph** — Instant throughput (rolling 1-second window) is plotted in real time on a canvas strip under the gauge: download in blue, upload in violet, with a dashed divider between phases.
+8. **Download consistency** — Average-to-peak ratio of the download phase; low values indicate an unstable line.
 
 ## Professional options
 
@@ -17,10 +19,13 @@ SPOS Net (https://spos-systems.github.io/SPOS-Net/) is a free and open-source in
 - Phase duration: 8 s (quick), 12 s (standard), 20 s (thorough) for download and upload.
 - Parallel connections: 1, 4, 8 (default) or 16 concurrent streams.
 - Toggles: latency-under-load sampling, packet-loss burst test.
-- Share: copy a result link (result encoded in the URL fragment — nothing is stored server-side), copy a text summary, save a 1200×630 PNG result card, export JSON, or use the native OS share sheet where available.
+- Share: copy a result link (result encoded in the URL fragment — nothing is stored server-side), copy a text summary, save a 1200×630 PNG result card, export JSON, share via WhatsApp / X / Telegram, or use the native OS share sheet where available.
 - Connection details: public IP, ASN and ISP name, city/country, Cloudflare colo serving the test, HTTP protocol version.
-- Connection score: 0–100 weighted score (download 42%, upload 23%, ping 20%, jitter 8%, loss 7%) with a grade and usage-suitability badges: 4K streaming (≥25 Mbps), HD streaming (≥5 Mbps), HD video calls, competitive gaming (ping ≤60 ms, jitter ≤15 ms, loss <1%), casual gaming (ping ≤120 ms), large downloads (≥100 Mbps).
+- Connection score: 0–100 weighted score (download 42%, upload 23%, ping 20%, jitter 8%, loss 7%) with a grade, a one-line verdict and usage-suitability badges: 4K streaming (≥25 Mbps), HD streaming (≥5 Mbps), HD video calls, competitive gaming (ping ≤60 ms, jitter ≤15 ms, loss <1%), casual gaming (ping ≤120 ms), large downloads (≥100 Mbps). Ping, jitter and loss tiles are tinted green/amber/red by quality thresholds after each run.
 - Test history: last 10 runs kept in the browser's localStorage only.
+- Keyboard shortcuts: Space (start/stop), S (settings), D (details).
+- URL parameters: `?lang=ar|en` forces a language; `?auto=1` starts the test automatically on load (useful for kiosks and embeds). On first visit the app follows the browser language automatically.
+- Installable PWA with an install button when the browser exposes `beforeinstallprompt`.
 
 ## Privacy and architecture
 
@@ -35,6 +40,7 @@ SPOS Net (https://spos-systems.github.io/SPOS-Net/) is a free and open-source in
 - **Why Cloudflare endpoints?** They are the only public, CORS-enabled, upload-capable measurement endpoints suitable for a dependency-free static site, and anycast routing automatically selects the nearest edge.
 - **Why is packet loss "estimated"?** Browsers cannot send ICMP packets; the HTTP failure-rate burst is the closest observable proxy.
 - **Cost?** Free, no ads, open source under MIT.
+- **What is bufferbloat?** The rise in latency while the line is busy (downloads/uploads in progress) — a common cause of laggy calls and games during transfers. SPOS Net grades it A+…F from the latency increase measured under load.
 
 ## Links
 

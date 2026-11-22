@@ -22,6 +22,7 @@ export const DICT = {
     sh: {
       link: 'نسخ رابط النتيجة', text: 'نسخ الملخص نصياً', png: 'حفظ كصورة PNG',
       json: 'تصدير JSON', native: 'مشاركة عبر التطبيقات',
+      wa: 'مشاركة عبر واتساب', x: 'مشاركة عبر X', tg: 'مشاركة عبر تيليجرام',
     },
 
     s: {
@@ -38,6 +39,8 @@ export const DICT = {
       lossHint: 'إرسال دفعة طلبات قصيرة لحساب نسبة الفشل التقديرية للحزم.',
       applies: 'سيُطبَّق التغيير في الاختبار القادم',
       reset: 'استعادة الافتراضي',
+      shortcuts: 'اختصارات لوحة المفاتيح',
+      kStart: 'بدء/إيقاف الاختبار', kSettings: 'الإعدادات', kDetails: 'التفاصيل',
       how: 'كيف نقيس؟',
       howBody: 'يُجرى القياس عبر طلبات HTTP متوازية إلى أقرب نقطة Cloudflare، مع استبعاد مرحلة التسارع الأولى وحساب المتوسط على النافذة المستقرة، وقياس الاستجابة من زمن أول بايت.',
     },
@@ -63,6 +66,8 @@ export const DICT = {
       loss: 'فقدان الحزم (تقديري)',
       loaded: 'الاستجابة أثناء الحمل',
       loadedNo: 'غير مُفعَّل',
+      bloat: 'درجة Bufferbloat',
+      consistency: 'ثبات التنزيل (متوسط/ذروة)',
       server: 'خادم القياس',
       proto: 'البروتوكول',
       conn: 'عنوانك',
@@ -83,6 +88,14 @@ export const DICT = {
 
     grade: { exc: 'ممتاز', vg: 'جيد جداً', good: 'جيد', fair: 'مقبول', poor: 'ضعيف' },
 
+    v: {
+      exc: 'اتصال قوي — مؤهل للبث 4K والألعاب التنافسية ومكالمات الفيديو عالية الجودة.',
+      good: 'اتصال جيد — يكفي للبث HD ومكالمات الفيديو والألعاب العادية.',
+      fair: 'اتصال مقبول — يكفي للتصفح والبث HD غالباً، مع حدود عند الأحمال الثقيلة.',
+      poor: 'اتصال ضعيف — قد تحدث تقطّعات في البث والمكالمات.',
+      bloat: 'يُلاحَظ ارتفاع ملحوظ في زمن الاستجابة أثناء الحمل (Bufferbloat).',
+    },
+
     conn: {
       waiting: 'جارٍ التعرف على الاتصال…',
       fail: 'تعذر التعرف على الاتصال',
@@ -99,11 +112,12 @@ export const DICT = {
       saved: 'تم حفظ الملف',
       resetDone: 'أُعيدت الإعدادات الافتراضية',
       cleared: 'تم مسح السجل',
+      installed: 'تم تثبيت التطبيق',
       sharedNote: 'تعرض هذه النتيجة مشارَكة من جهاز آخر',
       runYours: 'أجرِ اختبارك',
     },
 
-    f: { tag: 'أداة مفتوحة المصدر لقياس سرعة الإنترنت', dev: 'من تطوير' },
+    f: { tag: 'أداة مفتوحة المصدر لقياس سرعة الإنترنت', dev: 'من تطوير', install: 'تثبيت' },
 
     aria: {
       settings: 'الإعدادات', close: 'إغلاق', gauge: 'عداد السرعة',
@@ -135,6 +149,7 @@ export const DICT = {
     sh: {
       link: 'Copy result link', text: 'Copy summary text', png: 'Save as PNG',
       json: 'Export JSON', native: 'Share via apps',
+      wa: 'Share via WhatsApp', x: 'Share via X', tg: 'Share via Telegram',
     },
 
     s: {
@@ -151,6 +166,8 @@ export const DICT = {
       lossHint: 'Sends a burst of short requests to estimate the failure rate.',
       applies: 'Will apply on the next test',
       reset: 'Reset to defaults',
+      shortcuts: 'Keyboard shortcuts',
+      kStart: 'start/stop the test', kSettings: 'settings', kDetails: 'details',
       how: 'How we measure',
       howBody: 'Measurements run as parallel HTTP requests to the nearest Cloudflare edge. The initial ramp-up is excluded and the average is taken over the stable window; latency is measured as time-to-first-byte.',
     },
@@ -170,6 +187,8 @@ export const DICT = {
       loss: 'Packet loss (est.)',
       loaded: 'Latency under load',
       loadedNo: 'Not enabled',
+      bloat: 'Bufferbloat grade',
+      consistency: 'Download consistency (avg/peak)',
       server: 'Test server', proto: 'Protocol', conn: 'Your address', date: 'Test date',
       samples: 'samples', of: 'of', failed: 'failed',
     },
@@ -181,6 +200,14 @@ export const DICT = {
 
     grade: { exc: 'Excellent', vg: 'Very good', good: 'Good', fair: 'Fair', poor: 'Poor' },
 
+    v: {
+      exc: 'Strong connection — ready for 4K streaming, competitive gaming and HD video calls.',
+      good: 'Good connection — enough for HD streaming, video calls and casual gaming.',
+      fair: 'Fair connection — fine for browsing and mostly HD streaming; struggles under heavy load.',
+      poor: 'Weak connection — expect interruptions in streaming and calls.',
+      bloat: 'Latency rises noticeably under load (bufferbloat).',
+    },
+
     conn: { waiting: 'Identifying connection…', fail: 'Could not identify connection', ip: 'IP', server: 'Server' },
 
     t: {
@@ -188,11 +215,12 @@ export const DICT = {
       netErr: 'Could not reach the measurement server — check your connection',
       noData: 'No data was received during the test',
       saved: 'File saved', resetDone: 'Settings restored', cleared: 'History cleared',
+      installed: 'App installed',
       sharedNote: 'This result was shared from another device',
       runYours: 'Run your own test',
     },
 
-    f: { tag: 'Open-source internet speed test', dev: 'Developed by' },
+    f: { tag: 'Open-source internet speed test', dev: 'Developed by', install: 'Install' },
 
     aria: {
       settings: 'Settings', close: 'Close', gauge: 'Speed gauge',

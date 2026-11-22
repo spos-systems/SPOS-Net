@@ -32,6 +32,9 @@
   <meta name="twitter:image" content="https://spos-systems.github.io/SPOS-Net/assets/img/og.png">
 
   <link rel="canonical" href="https://spos-systems.github.io/SPOS-Net/">
+  <link rel="alternate" hreflang="ar" href="https://spos-systems.github.io/SPOS-Net/">
+  <link rel="alternate" hreflang="en" href="https://spos-systems.github.io/SPOS-Net/?lang=en">
+  <link rel="alternate" hreflang="x-default" href="https://spos-systems.github.io/SPOS-Net/">
   <link rel="icon" href="favicon.ico" sizes="48x48">
   <link rel="icon" type="image/svg+xml" href="assets/img/favicon.svg">
   <link rel="icon" type="image/png" sizes="32x32" href="assets/img/favicon-32.png">
@@ -45,20 +48,61 @@
     "@context": "https://schema.org",
     "@type": "WebApplication",
     "name": "SPOS Net",
-    "alternateName": "SPOS Net — اختبار سرعة الإنترنت",
+    "alternateName": ["SPOS Net — اختبار سرعة الإنترنت", "SPOS Net — Internet Speed Test"],
     "url": "https://spos-systems.github.io/SPOS-Net/",
     "applicationCategory": "UtilitiesApplication",
     "operatingSystem": "Any",
     "browserRequirements": "Requires JavaScript",
+    "softwareVersion": "2.1.0",
+    "isAccessibleForFree": true,
     "inLanguage": ["ar", "en"],
-    "description": "Free, open-source internet speed test: download, upload, latency (idle and loaded), jitter and estimated packet loss, with professional options, result sharing and export.",
-    "featureList": "Download speed, Upload speed, Latency (ping), Jitter, Estimated packet loss, Loaded latency, Result sharing, PNG/JSON export, Connection info, Test history",
+    "description": "Free, open-source internet speed test: download, upload, latency (idle and under load), jitter, estimated packet loss and a bufferbloat grade — with a live speed graph, professional options, result sharing and export.",
+    "featureList": "Download speed, Upload speed, Latency (ping), Jitter, Estimated packet loss, Latency under load (bufferbloat grade), Live speed graph, Connection score, Result sharing (link, PNG, JSON, WhatsApp, X, Telegram), Connection info, Local test history, Keyboard shortcuts",
     "offers": { "@type": "Offer", "price": "0", "priceCurrency": "USD" },
     "publisher": {
       "@type": "Organization",
       "name": "SPOS — صولة للأنظمة",
       "url": "https://spos.ly"
     }
+  }
+  </script>
+  <script type="application/ld+json">
+  {
+    "@context": "https://schema.org",
+    "@type": "FAQPage",
+    "inLanguage": "ar",
+    "mainEntity": [
+      {
+        "@type": "Question",
+        "name": "ما هو اختبار سرعة الإنترنت SPOS Net؟",
+        "acceptedAnswer": { "@type": "Answer", "text": "SPOS Net أداة مجانية مفتوحة المصدر تعمل في المتصفح مباشرة لقياس سرعة الإنترنت: سرعة التنزيل والرفع، زمن الاستجابة (Ping)، التذبذب (Jitter)، فقدان الحزم التقديري، والاستجابة أثناء الحمل (Bufferbloat) — بدون إعلانات وبدون تتبع." }
+      },
+      {
+        "@type": "Question",
+        "name": "كيف يقيس SPOS Net سرعة الإنترنت؟",
+        "acceptedAnswer": { "@type": "Answer", "text": "عبر طلبات HTTP متوازية إلى أقرب نقطة Cloudflare، مع استبعاد مرحلة التسارع الأولى من الحساب، وحساب المتوسط على النافذة المستقرة وتتبّع الذروة، وقياس زمن الاستجابة من زمن أول بايت (TTFB)." }
+      },
+      {
+        "@type": "Question",
+        "name": "ما هو التذبذب (Jitter) وما هو فقدان الحزم؟",
+        "acceptedAnswer": { "@type": "Answer", "text": "التذبذب هو متوسط الفروق بين عينات زمن الاستجابة المتتالية — كلما قل كان الاتصال أكثر استقراراً للمكالمات والألعاب. وفقدان الحزم هو نسبة الحزم التي لا تصل إلى وجهتها، ويُقدّر هنا عبر دفعة طلبات قصيرة محددة بزمن." }
+      },
+      {
+        "@type": "Question",
+        "name": "ما هو Bufferbloat ودرجة الاستجابة أثناء الحمل؟",
+        "acceptedAnswer": { "@type": "Answer", "text": "Bufferbloat هو ارتفاع زمن الاستجابة عندما يكون الخط مشغولاً بالتنزيل أو الرفع، وهو سبب شائع لتقطّع المكاملات والألعاب أثناء التحميل. يمنح SPOS Net درجة من A+ إلى F بناءً على مقدار هذا الارتفاع." }
+      },
+      {
+        "@type": "Question",
+        "name": "هل SPOS Net مجاني؟ وهل يحفظ نتائجي؟",
+        "acceptedAnswer": { "@type": "Answer", "text": "نعم، مجاني بالكامل ومفتوح المصدر تحت رخصة MIT، بدون إعلانات أو حسابات. سجل آخر 10 نتائج يُحفظ محلياً في متصفحك فقط ولا يُرسل أي شيء إلى أي خادم غير خادم القياس." }
+      },
+      {
+        "@type": "Question",
+        "name": "هل يدعم SPOS Net العربية والإنجليزية؟",
+        "acceptedAnswer": { "@type": "Answer", "text": "نعم — واجهة كاملة بالعربية (RTL) والإنجليزية مع تبديل فوري، ويتعرّف تلقائياً على لغة المتصفح في الزيارة الأولى. يمكن أيضاً فتح النسخة الإنجليزية مباشرة عبر ?lang=en." }
+      }
+    ]
   }
   </script>
 </head>
@@ -83,6 +127,10 @@
         <span class="brand-name">SPOS&nbsp;Net</span>
       </div>
       <div class="topbar-actions">
+        <button id="btn-install" class="chip-btn has-icon" type="button" hidden>
+          <svg viewBox="0 0 24 24" aria-hidden="true" fill="none" stroke="currentColor" stroke-width="1.9" stroke-linecap="round" stroke-linejoin="round"><path d="M12 3v12m0 0 4-4m-4 4-4-4"/><path d="M4 17v2a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2v-2"/></svg>
+          <span data-i18n="f.install">تثبيت</span>
+        </button>
         <button id="btn-lang" class="chip-btn" type="button" aria-label="Switch language">EN</button>
         <a class="icon-btn" href="https://github.com/spos-systems/SPOS-Net" target="_blank" rel="noopener" aria-label="GitHub">
           <svg viewBox="0 0 24 24" aria-hidden="true"><path fill="currentColor" d="M12 .5A11.5 11.5 0 0 0 .5 12a11.5 11.5 0 0 0 7.86 10.93c.58.1.79-.25.79-.56v-1.97c-3.2.7-3.87-1.54-3.87-1.54-.53-1.33-1.28-1.69-1.28-1.69-1.05-.72.08-.7.08-.7 1.16.08 1.77 1.19 1.77 1.19 1.03 1.77 2.7 1.26 3.36.96.1-.75.4-1.26.73-1.55-2.55-.29-5.23-1.28-5.23-5.68 0-1.26.45-2.28 1.19-3.09-.12-.29-.52-1.46.11-3.05 0 0 .97-.31 3.18 1.18a11.05 11.05 0 0 1 5.8 0c2.2-1.49 3.17-1.18 3.17-1.18.63 1.59.23 2.76.12 3.05.74.81 1.18 1.83 1.18 3.09 0 4.41-2.69 5.38-5.25 5.67.41.36.78 1.05.78 2.12v3.15c0 .31.2.67.8.56A11.5 11.5 0 0 0 23.5 12 11.5 11.5 0 0 0 12 .5Z"/></svg>
@@ -134,9 +182,11 @@
         <li class="ph-sep" aria-hidden="true"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.7" stroke-linecap="round"><path d="m9 18 6-6-6-6"/></svg></li>
         <li class="ph" data-ph="upload">
           <i class="ph-dot" aria-hidden="true"></i><span data-i18n="phase.upload">الرفع</span>
-          <svg class="ph-check" viewBox="0 0 24 24" aria-hidden="true" fill="none" stroke="currentColor" stroke-width="2.4" stroke-linecap="round" stroke-linecap="round" stroke-linejoin="round"><path d="M20 6 9 17l-5-5"/></svg>
+          <svg class="ph-check" viewBox="0 0 24 24" aria-hidden="true" fill="none" stroke="currentColor" stroke-width="2.4" stroke-linecap="round" stroke-linejoin="round"><path d="M20 6 9 17l-5-5"/></svg>
         </li>
       </ol>
+
+      <canvas class="spark" id="spark" hidden aria-hidden="true"></canvas>
 
       <section class="metrics" aria-label="النتائج" data-i18n-aria="aria.metrics">
         <div class="metric" id="m-ping">
@@ -198,6 +248,18 @@
             <button class="menu-item" id="mi-json" type="button" role="menuitem">
               <svg viewBox="0 0 24 24" aria-hidden="true" fill="none" stroke="currentColor" stroke-width="1.7" stroke-linecap="round"><path d="M8 3H7a2 2 0 0 0-2 2v5a2 2 0 0 1-2 2 2 2 0 0 1 2 2v5c0 1.1.9 2 2 2h1"/><path d="M16 21h1a2 2 0 0 0 2-2v-5c0-1.1.9-2 2-2a2 2 0 0 1-2-2V5a2 2 0 0 0-2-2h-1"/></svg>
               <span data-i18n="sh.json">تصدير JSON</span>
+            </button>
+            <button class="menu-item" id="mi-wa" type="button" role="menuitem">
+              <svg viewBox="0 0 24 24" aria-hidden="true" fill="currentColor"><path d="M17.472 14.382c-.297-.149-1.758-.867-2.03-.967-.273-.099-.471-.148-.67.15-.197.297-.767.966-.94 1.164-.173.199-.347.223-.644.075-.297-.15-1.255-.463-2.39-1.475-.883-.788-1.48-1.761-1.653-2.059-.173-.297-.018-.458.13-.606.134-.133.298-.347.446-.52.149-.174.198-.298.298-.497.099-.198.05-.371-.025-.52-.075-.149-.669-1.612-.916-2.207-.242-.579-.487-.5-.669-.51-.173-.008-.371-.01-.57-.01-.198 0-.52.074-.792.372-.272.297-1.04 1.016-1.04 2.479 0 1.462 1.065 2.875 1.213 3.074.149.198 2.096 3.2 5.077 4.487.709.306 1.262.489 1.694.625.712.227 1.36.195 1.871.118.571-.085 1.758-.719 2.006-1.413.248-.694.248-1.289.173-1.413-.074-.124-.272-.198-.57-.347m-5.421 7.403h-.004a9.87 9.87 0 0 1-5.031-1.378l-.361-.214-3.741.982.998-3.648-.235-.374a9.86 9.86 0 0 1-1.51-5.26c.001-5.45 4.436-9.884 9.888-9.884 2.64 0 5.122 1.03 6.988 2.898a9.825 9.825 0 0 1 2.893 6.994c-.003 5.45-4.437 9.884-9.885 9.884m8.413-18.297A11.815 11.815 0 0 0 12.05 0C5.495 0 .16 5.335.157 11.892c0 2.096.547 4.142 1.588 5.945L.057 24l6.305-1.654a11.882 11.882 0 0 0 5.683 1.448h.005c6.554 0 11.89-5.335 11.893-11.893a11.821 11.821 0 0 0-3.48-8.413Z"/></svg>
+              <span data-i18n="sh.wa">مشاركة عبر واتساب</span>
+            </button>
+            <button class="menu-item" id="mi-x" type="button" role="menuitem">
+              <svg viewBox="0 0 24 24" aria-hidden="true" fill="currentColor"><path d="M18.244 2.25h3.308l-7.227 8.26 8.502 11.24H16.17l-5.214-6.817L4.99 21.75H1.68l7.73-8.835L1.254 2.25H8.08l4.713 6.231zm-1.161 17.52h1.833L7.084 4.126H5.117z"/></svg>
+              <span data-i18n="sh.x">مشاركة عبر X</span>
+            </button>
+            <button class="menu-item" id="mi-tg" type="button" role="menuitem">
+              <svg viewBox="0 0 24 24" aria-hidden="true" fill="currentColor"><path d="M11.944 0A12 12 0 0 0 0 12a12 12 0 0 0 12 12 12 12 0 0 0 12-12A12 12 0 0 0 12 0a12 12 0 0 0-.056 0zm4.962 7.224c.1-.002.321.023.465.14a.506.506 0 0 1 .171.325c.016.093.036.306.02.472-.18 1.898-.962 6.502-1.36 8.627-.168.9-.499 1.201-.82 1.23-.696.065-1.225-.46-1.9-.902-1.056-.693-1.653-1.124-2.678-1.8-1.185-.78-.417-1.21.258-1.91.177-.184 3.247-2.977 3.307-3.23.007-.032.014-.15-.056-.212s-.174-.041-.249-.024c-.106.024-1.793 1.14-5.061 3.345-.48.33-.913.49-1.302.48-.428-.008-1.252-.241-1.865-.44-.752-.245-1.349-.374-1.297-.789.027-.216.325-.437.893-.663 3.498-1.524 5.83-2.529 6.998-3.014 3.332-1.386 4.025-1.627 4.476-1.635z"/></svg>
+              <span data-i18n="sh.tg">مشاركة عبر تيليجرام</span>
             </button>
             <button class="menu-item" id="mi-native" type="button" role="menuitem" hidden>
               <svg viewBox="0 0 24 24" aria-hidden="true" fill="none" stroke="currentColor" stroke-width="1.7" stroke-linecap="round"><circle cx="18" cy="5" r="3"/><circle cx="6" cy="12" r="3"/><circle cx="18" cy="19" r="3"/><path d="m8.6 13.5 6.8 4M15.4 6.5l-6.8 4"/></svg>
@@ -285,10 +347,20 @@
       </div>
       <p class="set-note" id="set-note" hidden data-i18n="s.applies">سيُطبَّق التغيير في الاختبار القادم</p>
       <button class="btn btn-ghost" id="btn-reset" type="button" data-i18n="s.reset">استعادة الافتراضي</button>
+      <div class="set-group">
+        <div class="set-label" data-i18n="s.shortcuts">اختصارات لوحة المفاتيح</div>
+        <p class="set-hint">
+          <kbd>Space</kbd> <span data-i18n="s.kStart">بدء/إيقاف الاختبار</span>
+          <span class="foot-sep" aria-hidden="true">·</span>
+          <kbd>S</kbd> <span data-i18n="s.kSettings">الإعدادات</span>
+          <span class="foot-sep" aria-hidden="true">·</span>
+          <kbd>D</kbd> <span data-i18n="s.kDetails">التفاصيل</span>
+        </p>
+      </div>
       <div class="about-block">
         <div class="set-label" data-i18n="s.how">كيف نقيس؟</div>
         <p data-i18n="s.howBody">يُجرى القياس عبر طلبات HTTP متوازية إلى أقرب نقطة Cloudflare، مع استبعاد مرحلة التسارع الأولى وحساب المتوسط على النافذة المستقرة، وقياس الاستجابة من زمن أول بايت.</p>
-        <p class="about-credit">SPOS Net v2.0.0 · <a href="https://spos.ly" target="_blank" rel="noopener">SPOS — صولة للأنظمة</a></p>
+        <p class="about-credit"><span id="ver-tag">SPOS Net v2.1.0</span> · <a href="https://spos.ly" target="_blank" rel="noopener">SPOS — صولة للأنظمة</a></p>
       </div>
     </div>
   </aside>

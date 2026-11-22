@@ -1,9 +1,9 @@
 # SPOS Net
 
-> SPOS Net is a free, open-source internet speed test that measures download speed, upload speed, latency (idle and under load), jitter and estimated packet loss — with professional options, result sharing and export.
+> SPOS Net is a free, open-source internet speed test that measures download speed, upload speed, latency (idle and under load), jitter and estimated packet loss — with a live speed graph, a bufferbloat grade (A+…F), professional options, result sharing and export.
 
 URL: https://spos-systems.github.io/SPOS-Net/
-Language: Arabic (default, RTL) and English
+Language: Arabic (RTL) and English — follows the browser language on first visit
 Developer: SPOS — صولة للأنظمة (https://spos.ly)
 License: MIT
 
@@ -14,7 +14,9 @@ License: MIT
 - Latency (ping): time-to-first-byte of empty requests; min / median / average / max reported.
 - Jitter: mean absolute difference between consecutive latency samples.
 - Estimated packet loss: failure rate of a burst of short timed requests (HTTP-level estimate).
-- Latency under load: latency samples taken while the line is saturated (bufferbloat indicator).
+- Latency under load: latency samples taken while the line is saturated, graded A+…F as a bufferbloat indicator.
+- Live speed graph: instant download/upload speed plotted in real time during the test.
+- Download consistency: average-to-peak ratio, an indicator of line stability.
 
 ## Professional options
 
@@ -22,10 +24,13 @@ License: MIT
 - Phase duration: 8 / 12 / 20 seconds.
 - Parallel connections: 1 / 2 / 4 / 8 / 16.
 - Toggles: latency-under-load sampling, packet-loss burst.
-- Result actions: copy shareable link, copy text summary, export PNG image, export JSON, native share.
+- Result actions: copy shareable link, copy text summary, export PNG image, export JSON, share via WhatsApp / X / Telegram, native share.
 - Connection details: IP, ASN / ISP, city, Cloudflare colo, HTTP protocol.
-- Connection score (0–100) with usage suitability badges (4K streaming, HD streaming, video calls, competitive gaming, casual gaming, large downloads).
+- Connection score (0–100) with usage suitability badges (4K streaming, HD streaming, video calls, competitive gaming, casual gaming, large downloads) and a one-line verdict.
 - Local test history (last 10 runs, stored in the browser only).
+- Keyboard shortcuts: Space start/stop, S settings, D details.
+- URL parameters: `?lang=ar|en` opens a specific language; `?auto=1` starts the test automatically (kiosks/embeds). First visit follows the browser language automatically.
+- Installable as a PWA (offline shell via service worker).
 
 ## How it works
 

@@ -173,6 +173,12 @@ export class Engine {
       this.h.uploadDone?.(res.upload);
 
       this.h.phase?.('done');
+      /* aggregate loaded-latency stats (bufferbloat input) */
+      if (res.loaded.samples.length) {
+        const s = res.loaded.samples;
+        res.loaded.avg = s.reduce((a, b) => a + b, 0) / s.length;
+        res.loaded.max = Math.max(...s);
+      }
       this.h.done?.(res);
     } catch (e) {
       if (signal.aborted || e?.name === 'AbortError') return this.#abort();

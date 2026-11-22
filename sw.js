@@ -3,7 +3,7 @@
  * cache immediately so returning visitors get the new build, and keeps
  * nothing cached — a speed test has no offline value.
  */
-const VERSION = 'sposnet-v2';
+const VERSION = 'sposnet-v2.1';
 
 self.addEventListener('install', () => {
   self.skipWaiting();

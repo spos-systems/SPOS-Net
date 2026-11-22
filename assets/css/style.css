@@ -122,6 +122,8 @@ a { color: inherit; }
 }
 .chip-btn:hover { color: var(--txt); border-color: var(--txt-3); }
 .chip-btn:focus-visible { outline: 2px solid rgba(79, 157, 240, .5); outline-offset: 1px; }
+.chip-btn svg { width: 13px; height: 13px; }
+.chip-btn.has-icon { display: inline-flex; align-items: center; gap: 6px; }
 
 /* ═══ stage ═══ */
 .stage {
@@ -163,14 +165,14 @@ a { color: inherit; }
   0% { background-position: 130% 0; }
   100% { background-position: -90% 0; }
 }
-html[data-dir-fix] .skel { animation-direction: reverse; }
+html[dir="rtl"] .skel { animation-direction: reverse; }
 
 /* ── gauge ── */
 .gauge-zone { display: flex; flex-direction: column; align-items: center; gap: 4px; }
 
 .gauge {
   position: relative;
-  width: clamp(252px, 42svh, 400px);
+  width: clamp(240px, 40svh, 384px);
   aspect-ratio: 1;
 }
 .gauge-halo {
@@ -209,16 +211,24 @@ html[data-ph="ping"] .gauge-halo {
 }
 html[data-ph="download"] .g-label, html[data-ph="upload"] .g-label { color: var(--txt-2); }
 
-.g-readout { display: flex; align-items: baseline; gap: 7px; direction: ltr; }
+/* readout: number centered, unit beneath it */
+.g-readout { display: flex; flex-direction: column; align-items: center; gap: 1px; direction: ltr; }
 .g-num {
   font-family: var(--mono);
   font-weight: 500;
-  font-size: clamp(38px, 7.4svh, 52px);
+  font-size: clamp(40px, 7.6svh, 56px);
   letter-spacing: -.01em;
   line-height: 1;
   font-variant-numeric: tabular-nums;
 }
-.g-unit { font-size: 13.5px; color: var(--txt-3); font-weight: 500; }
+.g-unit {
+  font-size: 12px;
+  color: var(--txt-3);
+  font-weight: 500;
+  letter-spacing: .14em;
+  line-height: 1;
+  margin-top: 3px;
+}
 
 .g-grade { font-size: 13px; font-weight: 600; margin-top: 5px; }
 .g-grade.good { color: var(--ok); }
@@ -264,6 +274,13 @@ html[lang="en"] .scale-hint { letter-spacing: .04em; }
 }
 .stop-btn svg { width: 13px; height: 13px; }
 .stop-btn:hover { color: var(--bad); border-color: rgba(224, 121, 106, .35); }
+
+/* ── live speed graph ── */
+.spark {
+  display: block;
+  width: min(880px, 100%);
+  height: 56px;
+}
 
 /* ── phase chips ── */
 .phases {
@@ -349,6 +366,11 @@ html[data-ph="upload"] .metric.on#m-upload .m-head { color: var(--vio); }
 html[data-ph="download"] .metric.on#m-download .m-head svg,
 html[data-ph="download"] .metric.on#m-download .m-head { color: var(--acc); }
 
+/* quality tinting for latency-family metrics (after a finished run) */
+.m-val .num.good { color: var(--ok); }
+.m-val .num.mid { color: var(--warn); }
+.m-val .num.low { color: var(--bad); }
+
 /* ── actions (space always reserved — layout stays locked between states) ── */
 .actions {
   display: flex; align-items: center; justify-content: center;
@@ -379,11 +401,11 @@ html[data-state="done"] .actions { opacity: 1; pointer-events: auto; }
 .btn-ghost { border-color: transparent; color: var(--txt-3); height: 36px; }
 .btn-ghost:hover { border-color: var(--line-2); }
 
-/* ── share menu ── */
+/* ── share menu (opens upward — the actions row sits near the viewport bottom) ── */
 .menu-anchor { position: relative; }
 .menu {
   position: absolute;
-  top: calc(100% + 8px);
+  bottom: calc(100% + 10px);
   inset-inline-end: 0;
   min-width: 218px;
   background: var(--panel-2);
@@ -392,8 +414,9 @@ html[data-state="done"] .actions { opacity: 1; pointer-events: auto; }
   box-shadow: var(--shadow-pop);
   padding: 5px;
   z-index: 40;
-  animation: rise .18s var(--ease);
+  animation: menu-rise .18s var(--ease);
 }
+@keyframes menu-rise { from { opacity: 0; transform: translateY(-6px); } }
 .menu-item {
   display: flex; align-items: center; gap: 10px;
   width: 100%;
@@ -471,6 +494,18 @@ html[dir="rtl"] .drawer { --dir: -1; }
 .set-row > div { display: flex; flex-direction: column; gap: 5px; max-width: 75%; }
 .set-note { font-size: 12px; color: var(--warn); }
 
+kbd {
+  font-family: var(--mono);
+  font-size: 10.5px;
+  color: var(--txt-2);
+  background: var(--panel-3);
+  border: 1px solid var(--line-2);
+  border-bottom-width: 2px;
+  border-radius: 5px;
+  padding: 1px 6px;
+  white-space: nowrap;
+}
+
 .seg {
   display: flex;
   background: var(--panel);
@@ -503,15 +538,23 @@ html[dir="rtl"] .drawer { --dir: -1; }
   transition: background-color .2s, border-color .2s;
   margin-top: 3px;
 }
+/*
+ * Switch knob — explicit per-direction rules (logical `inset-inline-start`
+ * cannot be animated consistently, and a plain translateX travels the wrong
+ * way in RTL). Track content box is 40px, knob 18px → on-state offset 20px.
+ */
 .switch i {
-  position: absolute; top: 2px; inset-inline-start: 2px;
+  position: absolute; top: 2px;
   width: 18px; height: 18px; border-radius: 50%;
   background: var(--txt-3);
-  transition: transform .2s var(--ease), background-color .2s;
+  transition: background-color .2s;
 }
+html[dir="ltr"] .switch i { left: 2px; transition-property: left, background-color; }
+html[dir="ltr"] .switch[aria-checked="true"] i { left: 20px; }
+html[dir="rtl"] .switch i { right: 2px; transition-property: right, background-color; }
+html[dir="rtl"] .switch[aria-checked="true"] i { right: 20px; }
 .switch[aria-checked="true"] { background: rgba(79, 157, 240, .22); border-color: rgba(79, 157, 240, .55); }
-.switch[aria-checked="true"] i { background: var(--acc-2); transform: translateX(calc(var(--dir2, 1) * -18px)); }
-html[dir="rtl"] .switch { --dir2: -1; }
+.switch[aria-checked="true"] i { background: var(--acc-2); }
 
 .about-block {
   border-top: 1px solid var(--line);
@@ -524,6 +567,8 @@ html[dir="rtl"] .switch { --dir2: -1; }
 .about-credit a:hover { color: var(--txt-2); }
 
 /* details drawer */
+.verdict { font-size: 12.5px; color: var(--txt-2); line-height: 1.65; }
+
 .score-block {
   display: flex; align-items: center; gap: 18px;
   padding: 16px 18px;
@@ -632,7 +677,8 @@ html[lang="en"] .d-sec-title { letter-spacing: .08em; text-transform: uppercase;
   .m-head svg { width: 15px; height: 15px; }
   .m-val .num { font-size: 17px; }
   .m-val .unit { font-size: 10px; }
-  .gauge { width: clamp(230px, 40svh, 300px); }
+  .gauge { width: clamp(226px, 37svh, 300px); }
+  .spark { height: 46px; }
   .start-btn { width: 92px; height: 92px; font-size: 15px; }
   .ph { padding: 4px 10px; font-size: 11.5px; }
   .ph span { display: none; }            /* dots only on tiny screens */
@@ -644,20 +690,23 @@ html[lang="en"] .d-sec-title { letter-spacing: .08em; text-transform: uppercase;
 
 @media (max-height: 780px) {
   .stage { gap: 12px; padding-block: 10px; }
-  .gauge { width: clamp(248px, 40svh, 370px); }
+  .gauge { width: clamp(232px, 38svh, 350px); }
+  .spark { height: 44px; }
   .metrics { padding-top: 10px; }
 }
 
 @media (max-width: 700px) and (max-height: 700px) {
-  .gauge { width: clamp(220px, 36svh, 280px); }
+  .gauge { width: clamp(216px, 34svh, 276px); }
   .stage { gap: 10px; }
+  .spark { height: 38px; }
   .g-num { font-size: 36px; }
 }
 
 @media (max-height: 640px) {
   .conn-line { display: none; }
   .stage { gap: 8px; }
-  .gauge { width: min(210px, 34svh); }
+  .gauge { width: min(204px, 32svh); }
+  .spark { height: 34px; }
   .g-num { font-size: 34px; }
   .start-btn { width: 80px; height: 80px; font-size: 14px; }
   .foot { height: 38px; }
