@@ -8,7 +8,7 @@
  *     RIPEstat, API calls) are never intercepted — they must hit the network.
  *   • Legacy caches are purged on activate.
  */
-const VERSION = 'sposnet-v2.2.0';
+const VERSION = 'sposnet-v2.3.0';
 
 const SHELL = [
   './',
@@ -21,7 +21,7 @@ const SHELL = [
   './assets/js/engine.js',
   './assets/js/gauge.js',
   './assets/js/i18n.js',
-  './assets/img/logo.png',
+  './assets/img/company-logo.png',
   './assets/img/favicon.svg',
   './assets/img/favicon-32.png',
   './assets/img/icon-180.png',
@@ -55,6 +55,7 @@ self.addEventListener('fetch', (event) => {
 
   const url = new URL(req.url);
   if (url.origin !== location.origin) return;          /* never touch measurement traffic */
+  if (url.pathname.includes('/assets/testdata/')) return;  /* 16 MB test payload — network only, never cached */
 
   /* navigations: network-first so updates land, cache fallback offline */
   if (req.mode === 'navigate') {

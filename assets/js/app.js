@@ -8,14 +8,23 @@ const $ = (s, r = document) => r.querySelector(s);
 const $$ = (s, r = document) => [...r.querySelectorAll(s)];
 
 const SITE_URL = 'https://spos-systems.github.io/SPOS-Net/';
-const VERSION = '2.2.0';
+const VERSION = '2.3.0';
 
-const DEFAULTS = { lang: 'ar', unit: 'mbps', duration: 12, streams: 8, loaded: true, loss: true };
+const DEFAULTS = { lang: 'ar', unit: 'mbps', duration: 12, streams: 8, loaded: true, loss: true, shareFmt: 'square' };
 
 const html = document.documentElement;
 const state = { mode: 'idle', result: null, shared: null, meta: null, titleTimer: 0 };
 
+/* share-card formats (logical design size; exported at 2× for crispness) */
+const FORMATS = {
+  square: { w: 1080, h: 1080 },
+  portrait: { w: 1080, h: 1920 },
+  landscape: { w: 1920, h: 1080 },
+};
+
 let settings = loadSettings();
+if (!FORMATS[settings.shareFmt]) settings.shareFmt = 'square';
+let shareFmt = settings.shareFmt;
 let gauge = null;
 let engine = null;
 
@@ -46,7 +55,7 @@ function conv(mbps) {
 }
 function fmtSpeed(mbps) {
   const { v, max } = conv(mbps);
-  return v >= 1000 ? Math.round(v).toLocaleString('en-US') : v.toFixed(max);
+  return max === 0 ? Math.round(v).toString() : v.toFixed(max);
 }
 const fmtMs = (v) => (v == null ? '—' : v < 10 ? v.toFixed(1) : Math.round(v).toString());
 
@@ -82,33 +91,34 @@ function applyLang() {
   $$('[data-i18n]').forEach((n) => { n.textContent = t(n.dataset.i18n); });
   $$('[data-i18n-aria]').forEach((n) => { n.setAttribute('aria-label', t(n.dataset.i18nAria)); });
   $('#btn-lang').textContent = l === 'ar' ? 'EN' : 'ع';
-  const startBtn = $('#btn-start');
-  startBtn.textContent = l === 'ar' ? 'ابدأ' : 'START';
+  $('#btn-start-txt').textContent = l === 'ar' ? 'ابدأ' : 'START';
   renderConnLine();
   if (state.result) {
     renderDetails(state.result);
     setGrade(scoreOf(state.result));
   }
-  if (state.mode === 'done') setGaugeLabel(state.shared ? 'shared' : 'done');
+  if (state.mode === 'running' && html.dataset.ph) setPhasePill(html.dataset.ph);
 }
 
-/* ── connection line ─────────────────────────────────────── */
+/* ── connection line (clean chips: ISP · location · server) ── */
 
 function renderConnLine() {
   const el = $('#conn-text');
   const m = state.meta;
-  if (!m) { el.hidden = true; $('#conn-skel').hidden = state.mode !== 'idle' ? true : false; return; }
+  if (!m) { el.hidden = true; $('#conn-skel').hidden = state.mode !== 'idle'; return; }
   $('#conn-skel').hidden = true;
   el.hidden = false;
-  const sep = `<span class="sep">·</span>`;
-  const loc = [m.city, m.country].filter(Boolean).join(', ');
+  const L = getLang();
   const parts = [];
-  if (m.ip) parts.push(`<b><bdi>${m.ip}</bdi></b>`);
-  if (m.org || m.asn) parts.push(`<b><bdi>${m.org || 'AS' + m.asn}</bdi></b>`);
-  if (loc) parts.push(`<b><bdi>${loc}</bdi></b>`);
-  const srv = `${getLang() === 'ar' ? 'الخادم' : 'Server'}: <bdi>Cloudflare${m.colo ? ' · ' + m.colo : ''}</bdi>`;
-  parts.push(srv);
-  el.innerHTML = parts.join(sep);
+  if (m.org) parts.push(`<b><bdi>${escapeHtml(m.org)}</bdi></b>`);
+  const loc = [m.city, m.country].filter(Boolean).join(', ');
+  if (loc) parts.push(`<b><bdi>${escapeHtml(loc)}</bdi></b>`);
+  parts.push(`${L === 'ar' ? 'الخادم' : 'Server'}: <b><bdi>Cloudflare${m.colo ? ' · ' + escapeHtml(m.colo) : ''}</bdi></b>`);
+  el.innerHTML = parts.join('<span class="sep">·</span>');
+}
+
+function escapeHtml(s) {
+  return String(s).replace(/[&<>"']/g, (c) => ({ '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;', "'": '&#39;' }[c]));
 }
 
 async function initMeta() {
@@ -121,24 +131,26 @@ async function initMeta() {
     renderConnLine();
   } else {
     $('#conn-skel').hidden = true;
-    const el = $('#conn-text');
-    el.hidden = false;
-    el.textContent = t('conn.fail');
+    $('#conn-text').hidden = true;
   }
 }
 
 /* ── gauge + readout ─────────────────────────────────────── */
 
 const PHASE_COLORS = {
-  ping: ['#4d5b7d', '#8b98b4', 'var(--steel-2)'],
-  download: ['#3d7fd6', '#6fb5ff', 'var(--acc)'],
-  upload: ['#7c66e0', '#a892ff', 'var(--vio)'],
-  done: ['#3d7fd6', '#6fb5ff', 'var(--acc)'],
+  ping: ['#7d8ba8', '#aeb9d2', '#94a3b8'],
+  download: ['#22d3ee', '#3b82f6', '#38bdf8'],
+  upload: ['#a78bfa', '#f472b6', '#c084fc'],
+  done: ['#22d3ee', '#3b82f6', '#38bdf8'],
 };
 
-function setGaugeLabel(kind) {
-  $('#g-label').textContent = t(`gauge.${kind}`);
+function setPhasePill(ph) {
+  const p = $('#g-phase');
+  if (!ph || ph === 'done') { p.hidden = true; return; }
+  p.hidden = false;
+  $('#g-phase-txt').textContent = t(`phase.${ph}`);
 }
+
 function setReadout(valueText, unitText) {
   const ro = $('#g-readout');
   ro.hidden = false;
@@ -219,10 +231,10 @@ const SPARK = {
       ctx.setLineDash([]);
     }
 
-    /* series: download (blue) then upload (violet) */
+    /* series: download (cyan-blue) then upload (violet-pink) */
     for (const [kind, color, fill] of [
-      ['down', '#4f9df0', 'rgba(79,157,240,.24)'],
-      ['up', '#9d86f2', 'rgba(157,134,242,.22)'],
+      ['down', '#38bdf8', 'rgba(56,189,248,.22)'],
+      ['up', '#c084fc', 'rgba(192,132,252,.20)'],
     ]) {
       const pts = this.samples.filter((s) => s[1] === kind);
       if (pts.length < 2) continue;
@@ -270,7 +282,6 @@ function setGrade(score) {
 
 function resetUI() {
   setState('idle');
-  html.dataset.ph = '';
   delete html.dataset.ph;
   $$('.ph').forEach((p) => p.classList.remove('active', 'done'));
   $$('.metric').forEach((m) => {
@@ -284,10 +295,11 @@ function resetUI() {
   $('#m-upload .unit').textContent = t(`u.${settings.unit}`);
   $('#g-readout').hidden = true;
   $('#g-grade').hidden = true;
+  setPhasePill(null);
   $('#btn-start').hidden = false;
+  $('#start-hint').hidden = false;
   $('#btn-stop').hidden = true;
   $('#actions').setAttribute('aria-hidden', 'true');
-  setGaugeLabel('idle');
   clearTimeout(state.titleTimer);
   $('#btn-again').querySelector('span').textContent = t('a.again');
   gauge.setColors(...PHASE_COLORS.download);
@@ -309,7 +321,7 @@ function phaseUI(ph) {
     p.classList.toggle('done', i < idx);
   });
   gauge.setColors(...PHASE_COLORS[ph]);
-  if (ph !== 'ping') setGaugeLabel(ph);
+  setPhasePill(ph);
 }
 
 async function startTest() {
@@ -318,8 +330,9 @@ async function startTest() {
   resetUI();
   setState('running');
   $('#btn-start').hidden = true;
+  $('#start-hint').hidden = true;
   $('#btn-stop').hidden = false;
-  setGaugeLabel('ping');
+  setPhasePill('ping');
 
   const runSettings = { ...settings, meta: state.meta };
   const hooks = {
@@ -330,7 +343,6 @@ async function startTest() {
     },
     pingSample: (done, total, ms, med) => {
       gauge.setProgress(done / total);
-      setGaugeLabel('ping');
       setReadout(fmtMs(ms), 'ms');
       $('#m-ping .num').textContent = fmtMs(med);
       $('#m-ping').classList.add('on');
@@ -346,20 +358,14 @@ async function startTest() {
       el.querySelector('.num').textContent = loss ? (loss.lost ? loss.pct.toFixed(1) : '0.0') : '—';
     },
     loadedSample: () => { /* aggregated into details */ },
-    sample: (kind, instant) => {
-      SPARK.add(kind, instant);
-      if (kind === 'down') {
-        gauge.setValue(instant);
-        setReadout(fmtSpeed(instant), t(`u.${settings.unit}`));
-        $('#m-download .num').textContent = fmtSpeed(instant);
-        $('#m-download').classList.add('on');
-      } else {
-        gauge.setValue(instant);
-        setReadout(fmtSpeed(instant), t(`u.${settings.unit}`));
-        $('#m-upload .num').textContent = fmtSpeed(instant);
-        $('#m-upload').classList.add('on');
-      }
-      updateRunTitle(instant);
+    sample: (kind, w1s, w300) => {
+      SPARK.add(kind, w300);
+      gauge.setValue(w1s);
+      setReadout(fmtSpeed(w1s), t(`u.${settings.unit}`));
+      const cell = kind === 'down' ? $('#m-download') : $('#m-upload');
+      cell.querySelector('.num').textContent = fmtSpeed(w1s);
+      cell.classList.add('on');
+      updateRunTitle(w1s);
     },
     downloadDone: (d) => { $('#m-download .num').textContent = fmtSpeed(d.avg); },
     uploadDone: (u) => { $('#m-upload .num').textContent = fmtSpeed(u.avg); },
@@ -397,7 +403,7 @@ function finishTest(result) {
   $('#btn-stop').hidden = true;
   html.dataset.ph = 'download';
   $$('.ph').forEach((p) => p.classList.add('done'));
-  setGaugeLabel('done');
+  setPhasePill(null);
   gauge.setColors(...PHASE_COLORS.done);
   gauge.setValue(result.download.avg);
   setReadout(fmtSpeed(result.download.avg), t(`u.${settings.unit}`));
@@ -499,23 +505,25 @@ function renderDetails(r) {
   const loss = r.loss.pct == null
     ? `<small>${d.loadedNo}</small>`
     : `${r.loss.pct.toFixed(1)}% <small>(${r.loss.lost} ${d.failed} ${d.of} ${r.loss.sent})</small>`;
+  const dlSus = r.download.sustained ?? r.download.avg;
+  const ulSus = r.upload.sustained ?? r.upload.avg;
   const consist = r.download.peak > 0
-    ? `${Math.round((r.download.avg / r.download.peak) * 100)}%`
+    ? `${Math.round((dlSus / r.download.peak) * 100)}%`
     : '—';
   const meta = r.meta || {};
   const server = `Cloudflare${meta.colo ? ' · ' + meta.colo : ''}${meta.coloCity ? ' — ' + meta.coloCity : ''}`;
   const conn = [meta.ip, meta.org || (meta.asn ? 'AS' + meta.asn : '')].filter(Boolean).join(' · ');
   const rid = (r.sharedCompact?.id) || r.id || resultId(compact(r));
-  const connInfo = r.streams
-    ? (L === 'ar'
-        ? `${r.streams} تدفق متوازٍ · ${r.portsUsed || 1} اتصالات TCP`
-        : `${r.streams} parallel streams · ${r.portsUsed || 1} TCP connections`)
-    : '—';
+  const connInfo = L === 'ar'
+    ? `${r.streams || '—'} تدفق متوازٍ · ${r.dlConn || 1} اتصالات TCP (تنزيل) · ${r.ulConn || 1} (رفع)`
+    : `${r.streams || '—'} parallel streams · ${r.dlConn || 1} TCP connections (down) · ${r.ulConn || 1} (up)`;
 
   const rows = [
     statRow(d.dlAvg, `${fmtSpeed(r.download.avg)} <small>${t(`u.${settings.unit}`)}</small>`),
+    statRow(d.dlSustained, `${fmtSpeed(dlSus)} <small>${t(`u.${settings.unit}`)}</small>`),
     statRow(d.dlPeak, `${fmtSpeed(r.download.peak)} <small>${t(`u.${settings.unit}`)}</small>`),
     statRow(d.ulAvg, `${fmtSpeed(r.upload.avg)} <small>${t(`u.${settings.unit}`)}</small>`),
+    statRow(d.ulSustained, `${fmtSpeed(ulSus)} <small>${t(`u.${settings.unit}`)}</small>`),
     statRow(d.ulPeak, `${fmtSpeed(r.upload.peak)} <small>${t(`u.${settings.unit}`)}</small>`),
     statRow(d.consistency, consist),
     statRow(d.vol, `${MB(r.download.bytes + r.upload.bytes)} MB`),
@@ -588,13 +596,11 @@ function renderDetails(r) {
     <div class="drawer-actions">
       <button class="btn" id="d-share">${t('a.share')}</button>
       <button class="btn btn-accent" id="d-img">${t('sh.img')}</button>
-      <button class="btn" id="d-png">${t('sh.png')}</button>
       <button class="btn" id="d-json">${t('sh.json')}</button>
     </div>`;
 
-  $('#d-share').onclick = () => { closeDrawers(); openShareMenu(); };
-  $('#d-img').onclick = () => { closeDrawers(); shareImage(); };
-  $('#d-png').onclick = () => exportPng();
+  $('#d-share').onclick = () => { closeDrawers(); openShareModal(); };
+  $('#d-img').onclick = () => { closeDrawers(); openShareModal(); };
   $('#d-json').onclick = () => exportJson();
   const ch = $('#btn-clearhist');
   if (ch) ch.onclick = () => { saveHistory([]); renderDetails(r); toast(t('t.cleared')); };
@@ -605,7 +611,7 @@ function histLabel(ts) {
   return `${String(d.getHours()).padStart(2, '0')}:${String(d.getMinutes()).padStart(2, '0')} · ${d.getDate()}/${d.getMonth() + 1}`;
 }
 
-/* ── drawers / menu ──────────────────────────────────────── */
+/* ── drawers / share sheet ───────────────────────────────── */
 
 function openDrawer(id) {
   closeDrawers();
@@ -620,10 +626,7 @@ function closeDrawers() {
   $$('.drawer').forEach((d) => { d.classList.remove('open'); d.setAttribute('aria-hidden', 'true'); });
   $('#scrim').hidden = true;
   document.body.style.overflow = '';
-  closeShareMenu();
 }
-function openShareMenu() { $('#share-menu').hidden = false; }
-function closeShareMenu() { $('#share-menu').hidden = true; }
 
 /* ── share / export ──────────────────────────────────────── */
 
@@ -652,8 +655,9 @@ function expand(c) {
     ping: { med: c.pg, min: c.pg, avg: c.pg, max: c.pg, jitter: c.jt, samples: [] },
     loss: { pct: c.ls, sent: 0, lost: 0 },
     loaded: { samples: [] },
-    download: { avg: c.dl, peak: c.dl, bytes: 0, ms: 0 },
-    upload: { avg: c.ul, peak: c.ul, bytes: 0, ms: 0 },
+    download: { avg: c.dl, sustained: c.dl, peak: c.dl, bytes: 0, ms: 0 },
+    upload: { avg: c.ul, sustained: c.ul, peak: c.ul, bytes: 0, ms: 0 },
+    streams: 0, dlConn: 0, ulConn: 0,
     sharedCompact: c,
   };
   return r;
@@ -725,153 +729,319 @@ function exportJson() {
   downloadBlob(new Blob([JSON.stringify(out, null, 2)], { type: 'application/json' }), `sposnet-${new Date(r.ts).toISOString().slice(0, 10)}.json`);
 }
 
-function loadLogo() {
-  return new Promise((resolve) => {
+/* company logo (cached) — footer credit on the share card */
+const logoCache = {};
+function loadCompanyLogo() {
+  if (logoCache.p) return logoCache.p;
+  logoCache.p = new Promise((resolve) => {
     const img = new Image();
     img.onload = () => resolve(img);
     img.onerror = () => resolve(null);
-    img.src = 'assets/img/logo.png';
+    img.src = 'assets/img/company-logo.png';
   });
+  return logoCache.p;
 }
 
-async function buildCardBlob(r) {
-  const c = r.sharedCompact || compact(r);
-  const L = getLang();
-  await document.fonts.ready;
-  const logo = await loadLogo();
+/* ── share card renderer (square / portrait / landscape) ─── */
 
-  const W = 1200, H = 630, S = 2;
-  const cv = document.createElement('canvas');
-  cv.width = W * S; cv.height = H * S;
-  const x = cv.getContext('2d');
-  x.scale(S, S);
-  x.direction = L === 'ar' ? 'rtl' : 'ltr';
+function blobGrad(x, cx, cy, r, color) {
+  const g = x.createRadialGradient(cx, cy, 0, cx, cy, r);
+  g.addColorStop(0, color);
+  g.addColorStop(1, 'rgba(0,0,0,0)');
+  x.fillStyle = g;
+  x.fillRect(cx - r, cy - r, r * 2, r * 2);
+}
+
+function roundRect(x, px, py, w, h, r) {
+  x.beginPath();
+  x.moveTo(px + r, py);
+  x.arcTo(px + w, py, px + w, py + h, r);
+  x.arcTo(px + w, py + h, px, py + h, r);
+  x.arcTo(px, py + h, px, py, r);
+  x.arcTo(px, py, px + w, py, r);
+  x.closePath();
+}
+
+/* the SPOS Net site mark drawn programmatically (rounded square + arc + needle) */
+function drawMark(x, cx, cy, s) {
+  const half = s / 2;
+  roundRect(x, cx - half, cy - half, s, s, s * 0.24);
+  x.fillStyle = '#10151f';
+  x.fill();
+  x.strokeStyle = '#28324a';
+  x.lineWidth = Math.max(1.5, s * 0.035);
+  x.stroke();
+
+  const r = s * 0.30;
+  const grad = x.createLinearGradient(cx - r, cy - r, cx + r, cy + r);
+  grad.addColorStop(0, '#22d3ee');
+  grad.addColorStop(1, '#6366f1');
+  x.strokeStyle = grad;
+  x.lineWidth = s * 0.095;
+  x.lineCap = 'round';
+  /* 270° arc: -135°…+135° in gauge convention → 135°…405° canvas */
+  x.beginPath();
+  x.arc(cx, cy, r, (135 * Math.PI) / 180, (405 * Math.PI) / 180);
+  x.stroke();
+
+  /* needle tilted slightly right of 12 o'clock */
+  const a = (22 * Math.PI) / 180;
+  x.strokeStyle = '#eef2fa';
+  x.lineWidth = s * 0.062;
+  x.beginPath();
+  x.moveTo(cx, cy);
+  x.lineTo(cx + Math.sin(a) * r * 0.85, cy - Math.cos(a) * r * 0.85);
+  x.stroke();
+  x.fillStyle = '#eef2fa';
+  x.beginPath();
+  x.arc(cx, cy, s * 0.055, 0, 7);
+  x.fill();
+}
+
+/* mini gauge arc with gradient + tip dot */
+function drawCardGauge(x, cx, cy, R, frac, lw) {
+  x.lineCap = 'round';
+  x.strokeStyle = '#1a2130';
+  x.lineWidth = lw;
+  x.beginPath();
+  x.arc(cx, cy, R, (135 * Math.PI) / 180, (405 * Math.PI) / 180);
+  x.stroke();
+
+  const a0 = (135 * Math.PI) / 180;
+  const a1 = a0 + ((405 - 135) * Math.PI) / 180 * Math.max(0.004, Math.min(1, frac));
+  const grad = x.createLinearGradient(cx - R, cy, cx + R, cy);
+  grad.addColorStop(0, '#22d3ee');
+  grad.addColorStop(1, '#3b82f6');
+  x.strokeStyle = grad;
+  x.shadowColor = 'rgba(56,189,248,.5)';
+  x.shadowBlur = lw * 1.6;
+  x.beginPath();
+  x.arc(cx, cy, R, a0, a1);
+  x.stroke();
+  x.shadowBlur = 0;
+
+  /* tip dot */
+  x.fillStyle = '#ffffff';
+  x.beginPath();
+  x.arc(cx + Math.cos(a1) * R, cy + Math.sin(a1) * R, lw * 0.55, 0, 7);
+  x.fill();
+}
+
+/* draws the share card into ctx within a W×H design space (call after scaling) */
+function drawCard(x, W, H, c, r) {
+  const L = getLang();
+  const RTL = L === 'ar';
+  const SANS = "'IBM Plex Sans Arabic', 'Segoe UI', sans-serif";
+  const MONO = "'IBM Plex Mono', ui-monospace, monospace";
+  x.direction = RTL ? 'rtl' : 'ltr';
+  x.textBaseline = 'middle';
 
   /* background */
-  x.fillStyle = '#090b11';
+  x.fillStyle = '#0a0e17';
   x.fillRect(0, 0, W, H);
-  const g = x.createRadialGradient(W / 2, 200, 40, W / 2, 200, 620);
-  g.addColorStop(0, 'rgba(35,48,76,.55)');
-  g.addColorStop(1, 'rgba(9,11,17,0)');
-  x.fillStyle = g;
-  x.fillRect(0, 0, W, H);
+  blobGrad(x, W * 0.85, H * 0.08, Math.max(W, H) * 0.55, 'rgba(59,130,246,.17)');
+  blobGrad(x, W * 0.10, H * 0.94, Math.max(W, H) * 0.52, 'rgba(139,92,246,.14)');
+  blobGrad(x, W * 0.50, H * 0.42, Math.max(W, H) * 0.75, 'rgba(34,211,238,.05)');
 
-  const SANS = "'IBM Plex Sans Arabic', sans-serif";
-  const MONO = "'IBM Plex Mono', monospace";
+  const score = scoreOf(r);
+  const gradeColor = score.cls === 'good' ? '#34d399' : score.cls === 'mid' ? '#fbbf24' : '#f87171';
+  const date = new Date(c.ts);
+  const ds = `${String(date.getHours()).padStart(2, '0')}:${String(date.getMinutes()).padStart(2, '0')} · ${date.getDate()}/${date.getMonth() + 1}/${date.getFullYear()}`;
+  const fmt = shareFmt;
+  const sq = fmt === 'square', pt_ = fmt === 'portrait';
 
-  /* header */
-  x.textBaseline = 'middle';
-  x.textAlign = 'start';
-  x.fillStyle = '#e9edf5';
-  x.font = `600 30px ${SANS}`;
-  const RTL = L === 'ar';
-  const pad = 64;
-  const put = (fn) => { RTL ? (x.textAlign = 'right', fn(W - pad)) : (x.textAlign = 'left', fn(pad)); };
+  /* ── header: site mark + wordmark (start side) · date (end side) ── */
+  const pad = sq || pt_ ? 72 : 96;
+  const mkS = sq ? 58 : pt_ ? 62 : 64;
+  const hY = pad + mkS / 2 + 6;
+  const startEdge = RTL ? W - pad : pad;
+  const endEdge = RTL ? pad : W - pad;
+  const dir = RTL ? -1 : 1;
 
-  put((X) => x.fillText('SPOS Net', X, 66));
-  x.fillStyle = '#5d6880';
-  x.font = `400 17px ${SANS}`;
-  const tagline = RTL ? 'اختبار سرعة الإنترنت — نتيجة مشارَكة' : 'Internet speed test — shared result';
-  put((X) => x.fillText(tagline, X, 104));
+  drawMark(x, startEdge - dir * mkS / 2, hY, mkS);
+  x.fillStyle = '#eef2fa';
+  x.font = `700 ${Math.round(mkS * 0.62)}px ${SANS}`;
+  x.textAlign = RTL ? 'right' : 'left';
+  x.fillText('SPOS Net', startEdge + dir * (mkS / 2 + 18), hY + 1);
 
-  /* company logo (opposite corner of the wordmark) */
-  if (logo) {
-    const ls = 46, lx = RTL ? pad : W - pad - ls, ly = 62;
-    const r0 = 12;
-    x.save();
-    x.beginPath();
-    x.moveTo(lx + r0, ly);
-    x.arcTo(lx + ls, ly, lx + ls, ly + ls, r0);
-    x.arcTo(lx + ls, ly + ls, lx, ly + ls, r0);
-    x.arcTo(lx, ly + ls, lx, ly, r0);
-    x.arcTo(lx, ly, lx + ls, ly, r0);
-    x.closePath();
-    x.clip();
-    x.drawImage(logo, lx, ly, ls, ls);
-    x.restore();
+  x.fillStyle = '#66738e';
+  x.font = `500 ${sq || pt_ ? 24 : 26}px ${SANS}`;
+  x.textAlign = RTL ? 'left' : 'right';
+  x.fillText(`${ds}${c.id ? '  ·  ' + c.id : ''}`, endEdge, hY + 1);
+
+  /* ── gauge + big number ── */
+  const gx = W / 2;
+  const gy = pt_ ? 780 : sq ? 480 : 560;
+  const gR = pt_ ? 300 : sq ? 208 : 232;
+  const numSize = pt_ ? 150 : sq ? 108 : 120;
+  drawCardGauge(x, gx, gy, gR, logScore(c.dl, 0.5, 1000), gR * 0.062);
+
+  x.textAlign = 'center';
+  x.fillStyle = '#f2f5fb';
+  x.font = `500 ${numSize}px ${MONO}`;
+  x.fillText(fmtSpeed(c.dl), gx, gy - numSize * 0.12);
+  x.fillStyle = '#8b97b0';
+  x.font = `600 ${Math.round(numSize * 0.28)}px ${SANS}`;
+  x.fillText(`Mbps · ${RTL ? 'التنزيل' : 'Download'}`, gx, gy + numSize * 0.52);
+
+  /* grade pill under the number */
+  const pillW = Math.round(numSize * 1.7), pillH = Math.round(numSize * 0.42);
+  const pillY = gy + numSize * 0.52 + numSize * 0.38;
+  roundRect(x, gx - pillW / 2, pillY, pillW, pillH, pillH / 2);
+  x.fillStyle = 'rgba(255,255,255,.05)';
+  x.fill();
+  x.strokeStyle = gradeColor + '66';
+  x.lineWidth = 2;
+  x.stroke();
+  x.fillStyle = gradeColor;
+  x.font = `700 ${Math.round(pillH * 0.5)}px ${SANS}`;
+  x.fillText(`${t(`grade.${score.grade}`)} · ${c.sc}/100`, gx, pillY + pillH / 2 + 1);
+
+  /* ── metric tiles ── */
+  const tiles = [
+    [RTL ? 'الرفع' : 'Upload', fmtSpeed(c.ul), 'Mbps', '#c084fc'],
+    [RTL ? 'الاستجابة' : 'Ping', fmtMs(c.pg), 'ms', '#7ee2b8'],
+    [RTL ? 'التذبذب' : 'Jitter', fmtMs(c.jt), 'ms', '#fcd34d'],
+    [RTL ? 'فقدان الحزم' : 'Loss', c.ls == null ? '—' : String(c.ls), '%', '#fda4af'],
+  ];
+
+  if (pt_) {
+    /* portrait: 2×2 tile grid */
+    const tw = (W - pad * 2 - 36) / 2, th = 150, gap = 36;
+    const gy0 = 1160;
+    tiles.forEach(([label, val, unit, color], i) => {
+      const col = i % 2, row = (i / 2) | 0;
+      const tx = pad + col * (tw + gap);
+      const ty = gy0 + row * (th + gap);
+      roundRect(x, tx, ty, tw, th, 26);
+      x.fillStyle = 'rgba(255,255,255,.035)';
+      x.fill();
+      x.strokeStyle = 'rgba(255,255,255,.07)';
+      x.lineWidth = 2;
+      x.stroke();
+      x.fillStyle = '#66738e';
+      x.font = `600 30px ${SANS}`;
+      x.textAlign = RTL ? 'right' : 'left';
+      x.fillText(label, RTL ? tx + tw - 34 : tx + 34, ty + 44);
+      x.fillStyle = color;
+      x.font = `600 62px ${MONO}`;
+      x.textAlign = 'center';
+      const cxT = tx + tw / 2;
+      x.fillText(`${val}`, cxT - 20, ty + 102);
+      x.fillStyle = '#66738e';
+      x.font = `600 28px ${SANS}`;
+      x.textAlign = 'left';
+      x.fillText(unit, cxT + (String(val).length * 30) / 2 + 8, ty + 108);
+    });
+  } else {
+    /* square / landscape: one row of four */
+    const rowY = sq ? 812 : 878;
+    const tw = (W - pad * 2) / 4;
+    x.strokeStyle = 'rgba(255,255,255,.08)';
+    x.lineWidth = 2;
+    x.beginPath(); x.moveTo(pad, rowY - 44); x.lineTo(W - pad, rowY - 44); x.stroke();
+    tiles.forEach(([label, val, unit, color], i) => {
+      const tx = pad + tw * i + tw / 2;
+      x.fillStyle = '#66738e';
+      x.font = `600 ${sq ? 26 : 28}px ${SANS}`;
+      x.textAlign = 'center';
+      x.fillText(label, tx, rowY - 6);
+      x.fillStyle = color;
+      x.font = `600 ${sq ? 48 : 52}px ${MONO}`;
+      x.fillText(`${val} ${unit}`, tx, rowY + 48);
+      if (i) {
+        x.strokeStyle = 'rgba(255,255,255,.07)';
+        x.lineWidth = 2;
+        x.beginPath(); x.moveTo(pad + tw * i, rowY - 22); x.lineTo(pad + tw * i, rowY + 74); x.stroke();
+      }
+    });
   }
 
-  /* gauge */
-  const gx = W / 2, gy = 350, gr = 150;
-  x.lineWidth = 13;
-  x.strokeStyle = '#161c29';
-  x.beginPath(); x.arc(gx, gy, gr, Math.PI * 0.75, Math.PI * 2.25); x.stroke();
-
-  const frac = Math.max(0.004, Math.min(1, logScore(c.dl, 0.5, 1000)));
-  const a0 = Math.PI * 0.75, a1 = a0 + Math.PI * 1.5 * frac;
-  const grad = x.createLinearGradient(gx - gr, 0, gx + gr, 0);
-  grad.addColorStop(0, '#3d7fd6'); grad.addColorStop(1, '#6fb5ff');
-  x.strokeStyle = grad;
-  x.beginPath(); x.arc(gx, gy, gr, a0, a1); x.stroke();
-
-  /* value marker at the arc end (no center needle — keeps the big number clean) */
-  const na = a0 + Math.PI * 1.5 * frac;
-  x.fillStyle = '#e9edf5';
-  x.beginPath(); x.arc(gx + Math.cos(na) * gr, gy + Math.sin(na) * gr, 7, 0, 7); x.fill();
-
-  /* center value */
-  x.textAlign = 'center';
-  x.fillStyle = '#e9edf5';
-  x.font = `500 64px ${MONO}`;
-  x.fillText(fmtSpeed(c.dl), gx, gy - 26);
-  x.fillStyle = '#9aa4b8';
-  x.font = `500 20px ${SANS}`;
-  x.fillText('Mbps  ·  ' + (RTL ? 'التنزيل' : 'Download'), gx, gy + 22);
-  x.fillStyle = '#7f8ba3';
-  x.font = `500 17px ${SANS}`;
-  x.fillText(`${t(`grade.${scoreOf(r).grade}`)} · ${c.sc}/100`, gx, gy + 52);
-
-  /* metric tiles */
-  const tiles = [
-    [(RTL ? 'الرفع' : 'Upload'), `${fmtSpeed(c.ul)}`, 'Mbps', '#a892ff'],
-    [(RTL ? 'الاستجابة' : 'Ping'), `${fmtMs(c.pg)}`, 'ms', '#aeb9d2'],
-    [(RTL ? 'التذبذب' : 'Jitter'), `${fmtMs(c.jt)}`, 'ms', '#aeb9d2'],
-    [(RTL ? 'فقدان الحزم' : 'Loss'), `${c.ls == null ? '—' : c.ls}`, '%', '#aeb9d2'],
-  ];
-  const tw = (W - pad * 2) / 4;
-  x.strokeStyle = '#1a2130';
-  x.beginPath(); x.moveTo(pad, 528); x.lineTo(W - pad, 528); x.stroke();
-  tiles.forEach(([label, val, unit, color], i) => {
-    const tx = pad + tw * i + tw / 2;
-    x.fillStyle = '#5d6880';
-    x.font = `500 15px ${SANS}`;
-    x.fillText(label, tx, 556);
-    x.fillStyle = color;
-    x.font = `500 30px ${MONO}`;
-    x.fillText(`${val} ${unit}`, tx, 592);
-    if (i) {
-      x.strokeStyle = '#1a2130';
-      x.beginPath(); x.moveTo(pad + tw * i, 540); x.lineTo(pad + tw * i, 606); x.stroke();
-    }
-  });
-
-  /* footer */
-  x.fillStyle = '#5d6880';
-  x.font = `400 14px ${SANS}`;
+  /* ── footer: company credit (start side) · url (end side) ── */
+  const fY = pt_ ? 1790 : sq ? 986 : 1004;
   x.textAlign = RTL ? 'right' : 'left';
-  const d = new Date(c.ts);
-  const ds = `${d.getDate()}/${d.getMonth() + 1}/${d.getFullYear()}`;
-  x.fillText(`${ds}  ·  ${c.org || ''}`, RTL ? W - pad : pad, 606 - 82);
-  x.textAlign = RTL ? 'left' : 'right';
-  x.fillText(`${c.id ? c.id + '  ·  ' : ''}spos-systems.github.io/SPOS-Net`, RTL ? pad : W - pad, 524);
+  const creditLabel = RTL ? 'تطوير' : 'Developed by';
+  x.fillStyle = '#66738e';
+  x.font = `500 ${sq || pt_ ? 26 : 28}px ${SANS}`;
+  x.fillText(creditLabel, startEdge, fY);
+  const cw = x.measureText(creditLabel).width;
+  const logoS = 44;
+  const lcx = startEdge - dir * (cw + logoS / 2 + 22);
+  const logo = logoCache.img;
+  if (logo) {
+    x.save();
+    roundRect(x, lcx - logoS / 2, fY - logoS / 2, logoS, logoS, 12);
+    x.clip();
+    x.drawImage(logo, lcx - logoS / 2, fY - logoS / 2, logoS, logoS);
+    x.restore();
+  }
+  x.fillStyle = '#c6cfdf';
+  x.font = `700 ${sq || pt_ ? 27 : 29}px ${SANS}`;
+  x.fillText(RTL ? 'صولة للأنظمة' : 'SPOS Systems', lcx - dir * (logoS / 2 + 16), fY);
 
+  x.textAlign = RTL ? 'left' : 'right';
+  x.fillStyle = '#38bdf8';
+  x.font = `600 ${sq || pt_ ? 25 : 27}px ${MONO}`;
+  x.direction = 'ltr';
+  x.fillText('spos-systems.github.io/SPOS-Net', endEdge, fY);
+  x.direction = RTL ? 'rtl' : 'ltr';
+}
+
+/* renders the selected format into a blob (2× supersampled PNG) */
+async function buildCardBlob(r, fmt) {
+  const c = r.sharedCompact || compact(r);
+  await document.fonts.ready;
+  logoCache.img = logoCache.img || (await loadCompanyLogo());
+  const { w: W, h: H } = FORMATS[fmt] || FORMATS.square;
+  const cv = document.createElement('canvas');
+  cv.width = W * 2; cv.height = H * 2;
+  const x = cv.getContext('2d');
+  x.scale(2, 2);
+  const prev = shareFmt;
+  shareFmt = fmt;
+  drawCard(x, W, H, c, r);
+  shareFmt = prev;
   return new Promise((resolve) => cv.toBlob(resolve, 'image/png'));
 }
 
-function exportPng() {
+/* live preview inside the share sheet */
+async function renderSharePreview() {
   const r = state.result;
   if (!r) return;
   const c = r.sharedCompact || compact(r);
-  buildCardBlob(r).then((b) => { if (b) downloadBlob(b, `sposnet-${c.id || c.ts}.png`); });
+  await document.fonts.ready.catch(() => {});
+  logoCache.img = logoCache.img || (await loadCompanyLogo());
+  const { w: W, h: H } = FORMATS[shareFmt];
+  const cv = $('#share-cv');
+  const box = $('#share-preview').getBoundingClientRect();
+  const mobile = innerWidth <= 700;
+  const maxW = Math.max(160, box.width - 24);
+  const maxH = mobile ? Math.min(210, innerHeight * 0.25) : Math.min(272, innerHeight * 0.32);
+  const k = Math.min(maxW / W, maxH / H);
+  const dpr = Math.min(2, devicePixelRatio || 1);
+  const dw = Math.round(W * k), dh = Math.round(H * k);
+  cv.style.width = dw + 'px';
+  cv.style.height = dh + 'px';
+  cv.width = Math.round(dw * dpr);
+  cv.height = Math.round(dh * dpr);
+  const x = cv.getContext('2d');
+  x.setTransform((dw / W) * dpr, 0, 0, (dh / H) * dpr, 0, 0);
+  drawCard(x, W, H, c, r);
+}
+
+function openShareModal() {
+  if (!state.result) return;
+  renderSharePreview();
+  openDrawer('#dr-share');
 }
 
 /* share the rendered result card straight into the phone's share sheet */
-async function shareImage() {
+async function shareImage(fmt) {
   const r = state.result;
   if (!r) return;
   const c = r.sharedCompact || compact(r);
   try {
-    const blob = await buildCardBlob(r);
+    const blob = await buildCardBlob(r, fmt || shareFmt);
     if (!blob) return;
     const file = new File([blob], `sposnet-${c.id || c.ts}.png`, { type: 'image/png' });
     if (navigator.canShare && navigator.canShare({ files: [file] })) {
@@ -883,8 +1053,14 @@ async function shareImage() {
   } catch { /* user dismissed the share sheet */ }
 }
 
+function exportPng(fmt) {
+  const r = state.result;
+  if (!r) return;
+  const c = r.sharedCompact || compact(r);
+  buildCardBlob(r, fmt || shareFmt).then((b) => { if (b) downloadBlob(b, `sposnet-${c.id || c.ts}.png`); });
+}
+
 async function nativeShare(r) {
-  const c = compact(r);
   try {
     await navigator.share({
       title: 'SPOS Net',
@@ -923,11 +1099,12 @@ function trySharedView() {
     state.result = r;
     setState('done');
     html.dataset.ph = 'download';
-    setGaugeLabel('shared');
+    setPhasePill(null);
     gauge.setColors(...PHASE_COLORS.done);
     gauge.setValue(r.download.avg);
     setReadout(fmtSpeed(r.download.avg), t(`u.${settings.unit}`));
     $('#btn-start').hidden = true;
+    $('#start-hint').hidden = true;
     $('#g-readout').hidden = false;
 
     $('#m-ping .num').textContent = fmtMs(r.ping.med);
@@ -984,7 +1161,12 @@ function bindSettings() {
       settings[key] = val;
       saveSettings();
       reflectSettings();
-      if (state.mode === 'running') $('#set-note').hidden = false;
+      if (key === 'shareFmt') {
+        shareFmt = val;
+        renderSharePreview();
+        return;
+      }
+      if (state.mode === 'running' && key !== 'shareFmt') $('#set-note').hidden = false;
       if (key === 'unit') {
         $('#m-download .unit').textContent = t(`u.${settings.unit}`);
         $('#m-upload .unit').textContent = t(`u.${settings.unit}`);
@@ -1007,6 +1189,7 @@ function bindSettings() {
   });
   $('#btn-reset').addEventListener('click', () => {
     settings = { ...DEFAULTS, lang: settings.lang };
+    shareFmt = settings.shareFmt;
     saveSettings();
     reflectSettings();
     toast(t('t.resetDone'));
@@ -1078,37 +1261,33 @@ function boot() {
     reflectSettings();
   });
 
-  $('#btn-share').addEventListener('click', (e) => {
-    e.stopPropagation();
-    $('#share-menu').hidden ? openShareMenu() : closeShareMenu();
-  });
-  document.addEventListener('click', (e) => {
-    if (!e.target.closest('.menu-anchor')) closeShareMenu();
-  });
-  $('#mi-link').addEventListener('click', () => { closeShareMenu(); if (state.result) copyText(resultLink(state.result)); });
-  $('#mi-img').addEventListener('click', () => { closeShareMenu(); shareImage(); });
-  $('#mi-text').addEventListener('click', () => { closeShareMenu(); if (state.result) copyText(summaryText(state.result)); });
-  $('#mi-png').addEventListener('click', () => { closeShareMenu(); exportPng(); });
-  $('#mi-json').addEventListener('click', () => { closeShareMenu(); exportJson(); });
+  /* share sheet */
+  $('#btn-share').addEventListener('click', openShareModal);
+  $('#mi-img').addEventListener('click', () => shareImage());
+  $('#mi-png').addEventListener('click', () => exportPng());
+  $('#mi-link').addEventListener('click', () => { if (state.result) copyText(resultLink(state.result)); });
+  $('#mi-text').addEventListener('click', () => { if (state.result) copyText(summaryText(state.result)); });
+  $('#mi-json').addEventListener('click', () => exportJson());
   $('#mi-wa').addEventListener('click', () => {
-    closeShareMenu();
     if (!state.result) return;
     openShare(`https://wa.me/?text=${encodeURIComponent(shortText(state.result) + '\n' + resultLink(state.result))}`);
   });
   $('#mi-x').addEventListener('click', () => {
-    closeShareMenu();
     if (!state.result) return;
     openShare(`https://twitter.com/intent/tweet?text=${encodeURIComponent(shortText(state.result))}&url=${encodeURIComponent(resultLink(state.result))}`);
   });
   $('#mi-tg').addEventListener('click', () => {
-    closeShareMenu();
     if (!state.result) return;
     openShare(`https://t.me/share/url?url=${encodeURIComponent(resultLink(state.result))}&text=${encodeURIComponent(shortText(state.result))}`);
   });
   if (navigator.share) {
     $('#mi-native').hidden = false;
-    $('#mi-native').addEventListener('click', () => { closeShareMenu(); if (state.result) nativeShare(state.result); });
+    $('#mi-native').addEventListener('click', () => { if (state.result) nativeShare(state.result); });
   }
+  addEventListener('resize', () => {
+    if (!$('#dr-share').classList.contains('open')) return;
+    renderSharePreview();
+  });
 
   /* PWA install */
   let installEvt = null;
@@ -1160,7 +1339,7 @@ function boot() {
   $('#scrim').addEventListener('click', closeDrawers);
   $$('[data-close]').forEach((b) => b.addEventListener('click', closeDrawers));
   document.addEventListener('keydown', (e) => {
-    if (e.key === 'Escape') { closeDrawers(); closeShareMenu(); }
+    if (e.key === 'Escape') closeDrawers();
   });
 
   window.addEventListener('hashchange', () => {

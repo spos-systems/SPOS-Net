@@ -10,6 +10,7 @@ export const DICT = {
 
     gauge: {
       idle: 'اختبار سرعة الإنترنت',
+      hint: 'اضغط لبدء الاختبار',
       ping: 'زمن الاستجابة',
       download: 'سرعة التنزيل',
       upload: 'سرعة الرفع',
@@ -20,10 +21,12 @@ export const DICT = {
 
     a: { share: 'مشاركة النتيجة', details: 'التفاصيل والإحصاءات', again: 'إعادة الاختبار' },
     sh: {
-      link: 'نسخ رابط النتيجة', text: 'نسخ الملخص نصياً', png: 'حفظ كصورة PNG',
+      title: 'مشاركة النتيجة',
+      fmt: 'صيغة الصورة',
+      fmtSquare: 'مربع', fmtPortrait: 'طولي', fmtLandscape: 'عريض',
+      link: 'نسخ الرابط', text: 'نسخ النص', png: 'حفظ PNG',
       img: 'مشاركة كصورة',
       json: 'تصدير JSON', native: 'مشاركة عبر التطبيقات',
-      wa: 'مشاركة عبر واتساب', x: 'مشاركة عبر X', tg: 'مشاركة عبر تيليجرام',
     },
 
     s: {
@@ -43,9 +46,9 @@ export const DICT = {
       shortcuts: 'اختصارات لوحة المفاتيح',
       kStart: 'بدء/إيقاف الاختبار', kSettings: 'الإعدادات', kDetails: 'التفاصيل',
       how: 'كيف نقيس؟',
-      howBody: 'يعمل التنزيل والرفع بتدفقات متوازية إلى أقرب نقطة Cloudflare، موزَّعة على عدة اتصالات TCP مستقلة (منافذ HTTPS متعددة). تبدأ الحسبة من أول بايت مستقبَل/مرسَل، وتُستبعد مرحلة تسارع TCP، ويُحسب المتوسط على النافذة المستقرة، وتُقاس الاستجابة من زمن أول بايت (TTFB).',
+      howBody: 'يعمل التنزيل والرفع بتدفقات متوازية موزَّعة على عدة اتصالات TCP مستقلة، مع استبعاد مرحلة التسارع، ثم حساب النتيجة بمنهجية Speedtest نفسها: ترتيب العينات، استبعاد الأبطأ (~22%)، حذف أسرع عينتين، ومتوسط الباقي — لذا تتطابق القراءات تقريباً.',
       whyDiff: 'لماذا قد تختلف النتيجة عن تطبيقات أخرى؟',
-      whyDiffBody: 'تستخدم الأدوات المختلفة خوادم ومناهج مختلفة: بعضها يقيس إلى خادم محلي قريب من مزوّدك فيُظهر أرقاماً أعلى، بينما يقيس SPOS Net إلى أقرب نقطة Cloudflare العالمية عبر مسار واقعي شامل. فروقات صغيرة (±10%) طبيعية بين أي أداتين، أما الفروقات الكبيرة فسببها غالباً اختلاف طول المسار أو منهجية التسارع والمتوسط. يستخدم SPOS Net — مثل التطبيقات الرائدة — اتصالات متوازية متعددة لتعبئة الخط كاملاً.',
+      whyDiffBody: 'اعتمدنا في الإصدار 2.3 منهجية Speedtest.net نفسها في حساب النتيجة النهائية، لذا يجب أن تتطابق القراءات تقريباً. الفروقات الصغيرة (±10%) طبيعية بين أي أداتين، والكبيرة تعني غالباً اختلاف المسار أو ازدحام لحظي.',
     },
 
     d: {
@@ -56,8 +59,10 @@ export const DICT = {
       history: 'سجل النتائج',
       clearHistory: 'مسح السجل',
       dlAvg: 'التنزيل — المتوسط',
+      dlSustained: 'التنزيل — المستدام',
       dlPeak: 'التنزيل — الذروة',
       ulAvg: 'الرفع — المتوسط',
+      ulSustained: 'الرفع — المستدام',
       ulPeak: 'الرفع — الذروة',
       vol: 'حجم البيانات',
       dur: 'مدة القياس',
@@ -152,6 +157,7 @@ export const DICT = {
 
     gauge: {
       idle: 'Internet Speed Test',
+      hint: 'Tap to start the test',
       ping: 'Latency',
       download: 'Download speed',
       upload: 'Upload speed',
@@ -162,10 +168,12 @@ export const DICT = {
 
     a: { share: 'Share result', details: 'Details & stats', again: 'Test again' },
     sh: {
-      link: 'Copy result link', text: 'Copy summary text', png: 'Save as PNG',
+      title: 'Share result',
+      fmt: 'Image format',
+      fmtSquare: 'Square', fmtPortrait: 'Portrait', fmtLandscape: 'Wide',
+      link: 'Copy link', text: 'Copy text', png: 'Save PNG',
       img: 'Share as image',
       json: 'Export JSON', native: 'Share via apps',
-      wa: 'Share via WhatsApp', x: 'Share via X', tg: 'Share via Telegram',
     },
 
     s: {
@@ -185,9 +193,9 @@ export const DICT = {
       shortcuts: 'Keyboard shortcuts',
       kStart: 'start/stop the test', kSettings: 'settings', kDetails: 'details',
       how: 'How we measure',
-      howBody: 'Download and upload run as parallel streams to the nearest Cloudflare edge, spread across several independent TCP connections (multiple HTTPS ports). The clock starts at the first byte, the TCP ramp-up window is excluded, the average is taken over the stable window, and latency is measured as time-to-first-byte.',
+      howBody: 'Download and upload run as parallel streams spread across several independent TCP connections, the ramp-up window is excluded, and the final figure follows Speedtest\'s documented method: samples are sorted, the slowest ~22% are discarded, the two fastest are removed, and the mean of the rest is reported.',
       whyDiff: 'Why can results differ from other apps?',
-      whyDiffBody: 'Tools differ in servers and methods: some test against an ISP-local server over a short path and therefore show higher numbers, while SPOS Net measures to the nearest global Cloudflare edge over a realistic end-to-end path. Small differences (±10%) are normal between any two tools; large gaps usually come from path length or ramp-up/averaging methods. Like leading apps, SPOS Net uses multiple parallel connections to fill the line.',
+      whyDiffBody: 'As of v2.3 we compute the final number with the same methodology as Speedtest.net, so readings should closely match. Small differences (±10%) are normal between any two tools; larger gaps usually come from path differences or momentary congestion.',
     },
 
     d: {
@@ -197,8 +205,8 @@ export const DICT = {
       caps: 'Suitability',
       history: 'Test history',
       clearHistory: 'Clear history',
-      dlAvg: 'Download — average', dlPeak: 'Download — peak',
-      ulAvg: 'Upload — average', ulPeak: 'Upload — peak',
+      dlAvg: 'Download — average', dlSustained: 'Download — sustained', dlPeak: 'Download — peak',
+      ulAvg: 'Upload — average', ulSustained: 'Upload — sustained', ulPeak: 'Upload — peak',
       vol: 'Data volume', dur: 'Test duration',
       pingMin: 'Ping — min', pingMed: 'Ping — median', pingAvg: 'Ping — avg', pingMax: 'Ping — max',
       jitter: 'Jitter',

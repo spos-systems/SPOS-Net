@@ -1,6 +1,7 @@
 /* SPOS Net — speed gauge
  * 270° dial, piecewise (Ookla-like) scale, tapered needle with
- * exponential smoothing, gradient value arc and a tip dot.
+ * exponential smoothing, gradient value arc with a soft glow,
+ * tip dot and a dim resting state for the pre-start screen.
  */
 
 const NS = 'http://www.w3.org/2000/svg';
@@ -47,18 +48,22 @@ export class Gauge {
 
     const defs = el('defs', {}, s);
     this.grad = el('linearGradient', { id: 'g-grad', x1: '0', y1: '0', x2: '1', y2: '0' }, defs);
-    this.stopA = el('stop', { offset: '0', 'stop-color': '#3d7fd6' }, this.grad);
-    this.stopB = el('stop', { offset: '1', 'stop-color': '#6fb5ff' }, this.grad);
-    const filter = el('filter', { id: 'g-shadow', x: '-40%', y: '-40%', width: '180%', height: '180%' }, defs);
-    el('feDropShadow', { dx: '0', dy: '1.5', stdDeviation: '2.2', 'flood-color': '#000', 'flood-opacity': '.45' }, filter);
+    this.stopA = el('stop', { offset: '0', 'stop-color': '#22d3ee' }, this.grad);
+    this.stopB = el('stop', { offset: '1', 'stop-color': '#3b82f6' }, this.grad);
+
+    /* soft glow behind the value arc — tinted with the phase accent */
+    const filter = el('filter', { id: 'g-glow', x: '-60%', y: '-60%', width: '220%', height: '220%' }, defs);
+    this.glow = el('feDropShadow', { dx: '0', dy: '0', stdDeviation: '7', 'flood-color': '#3b82f6', 'flood-opacity': '.55' }, filter);
+    const shadow = el('filter', { id: 'g-shadow', x: '-40%', y: '-40%', width: '180%', height: '180%' }, defs);
+    el('feDropShadow', { dx: '0', dy: '1.5', stdDeviation: '2.2', 'flood-color': '#000', 'flood-opacity': '.45' }, shadow);
 
     /* track */
     const [sx, sy] = pt(R, A0), [ex, ey] = pt(R, A0 + SWEEP);
     const d = `M ${sx} ${sy} A ${R} ${R} 0 1 1 ${ex} ${ey}`;
-    el('path', { d, fill: 'none', stroke: 'var(--gauge-track)', 'stroke-width': '11', 'stroke-linecap': 'round' }, s);
+    this.track = el('path', { d, fill: 'none', stroke: 'var(--gauge-track)', 'stroke-width': '12', 'stroke-linecap': 'round', class: 'g-track' }, s);
 
     /* ticks + labels */
-    const tickG = el('g', {}, s);
+    const tickG = el('g', { class: 'g-ticks' }, s);
     const step = SWEEP / (SEGS.length - 1);
     for (let i = 0; i < SEGS.length; i++) {
       const a = A0 + step * i;
@@ -67,7 +72,7 @@ export class Gauge {
       const [lx, ly] = pt(R + 32, a);
       const label = el('text', {
         x: lx, y: ly, 'text-anchor': 'middle', 'dominant-baseline': 'middle',
-        fill: '#7d88a1', 'font-size': '14',
+        fill: 'var(--tick-label)', 'font-size': '14',
         'font-family': "'IBM Plex Mono', monospace",
       }, tickG);
       label.textContent = String(SEGS[i]);
@@ -81,15 +86,16 @@ export class Gauge {
       }
     }
 
-    /* value arc */
+    /* value arc (glowing) */
     this.arc = el('path', {
-      d, fill: 'none', stroke: 'url(#g-grad)', 'stroke-width': '11',
+      d, fill: 'none', stroke: 'url(#g-grad)', 'stroke-width': '13',
       'stroke-linecap': 'round', 'stroke-dasharray': '0 99999',
+      filter: 'url(#g-glow)',
     }, s);
     this.arcLen = this.arc.getTotalLength();
 
     /* tip dot */
-    this.dot = el('circle', { r: '6', fill: 'var(--acc)', stroke: 'var(--bg)', 'stroke-width': '3.5', opacity: '0' }, s);
+    this.dot = el('circle', { r: '6.5', fill: '#fff', stroke: 'var(--bg)', 'stroke-width': '3.5', opacity: '0', filter: 'url(#g-shadow)' }, s);
 
     /* needle — floating segment (inner radius 74 → R-26), never crosses
        the center readout; no hub, the tip dot anchors the arc */
@@ -97,29 +103,30 @@ export class Gauge {
     const [nx1, ny1] = pt(74, 0), [nx2, ny2] = pt(R - 26, 0);
     el('line', {
       x1: nx1, y1: ny1, x2: nx2, y2: ny2,
-      stroke: '#dfe6f2', 'stroke-width': '3.6', 'stroke-linecap': 'round',
+      stroke: '#eef2fa', 'stroke-width': '3.6', 'stroke-linecap': 'round',
       filter: 'url(#g-shadow)',
     }, this.needle);
-    this.hubDot = el('circle', { cx: CX, cy: CY, r: '0', fill: 'var(--acc)' }, this.needle);
+    this.hubDot = el('circle', { cx: CX, cy: CY, r: '0', fill: '#3b82f6' }, this.needle);
   }
 
-  /* set phase colors: [start, end, cssAccentVar] */
-  setColors(a, b, hub) {
+  /* set phase colors: [start, end, glowHex] */
+  setColors(a, b, glow) {
     this.stopA.setAttribute('stop-color', a);
     this.stopB.setAttribute('stop-color', b);
-    this.dot.setAttribute('fill', hub);
-    this.hubDot.setAttribute('fill', hub);
+    this.glow.setAttribute('flood-color', glow || b);
+    this.hubDot.setAttribute('fill', glow || b);
   }
 
   /* drive by speed value (Mbps) */
   setValue(mbps) { this.mode = 'value'; this.target = this.fracOf(mbps); this.#needle(true); }
 
-  /* rest state: faint needle parked at zero (Cloudflare-style affordance) */
+  /* rest state: everything dim — the start button owns the pre-start screen */
   restIdle() {
     this.mode = 'value';
-    this.target = 0;
+    this.display = this.target = 0;
     this.showNeedle = false;
-    this.needle.setAttribute('opacity', '0.16');
+    this.needle.setAttribute('opacity', '0');
+    this.dot.setAttribute('opacity', '0');
   }
 
   /* drive by progress 0..1 (latency phase) */

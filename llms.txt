@@ -9,9 +9,10 @@ License: MIT
 
 ## Metrics
 
-- Download speed: parallel streams to the nearest Cloudflare edge, spread across up to 6 independent TCP connections (multiple HTTPS ports) to fully saturate the line like leading test apps; clock starts at the first byte, ramp-up excluded, stable-window average, peak tracking.
+- Download speed: parallel streams spread across up to 9 independent TCP connections — Cloudflare speed endpoints on multiple HTTPS ports (443/2053/2083/2087/2096/8443) plus a 16 MB incompressible test file served from the site's own origin (GitHub Pages/Fastly), jsDelivr and raw.githubusercontent mirrors, so the line stays fully saturated even when an ISP filters the alternate ports.
 - Upload speed: parallel XHR POST streams with real-time upload progress — bytes are counted the moment they hit the wire; adaptive chunk size; same ramp exclusion and windowing.
-- Result sharing: share as an image card straight into the phone's share sheet (Web Share API files), copy a result link (results encoded in the URL — nothing stored server-side), save PNG, export JSON, WhatsApp / X / Telegram / native share.
+- Final figure (download & upload): Speedtest.net's documented methodology — instantaneous samples over the stable window are sorted, the two fastest are removed and the slowest ~22% are discarded; the mean of the remainder is reported. Sustained average and best 500 ms peak are also shown in the details.
+- Result sharing: share as an image card in three formats — square 1:1, portrait 9:16 and wide 16:9 — straight into the phone's share sheet (Web Share API files) with a live preview; copy a result link (results encoded in the URL — nothing stored server-side), save PNG, export JSON, WhatsApp / X / Telegram / native share.
 - Every result gets a short Result ID (e.g. SP-4F9K2Q1) shown in the details drawer and on the shared image card.
 - Real-world estimates: time to download a 1 GB file, a 10 GB game, a 7 GB 4K movie and to upload 500 MB of photos, computed from the measured speeds.
 - Latency (ping): time-to-first-byte of empty requests; min / median / average / max reported.
@@ -25,7 +26,7 @@ License: MIT
 
 - Display units: Mbps / MB/s / kbps.
 - Phase duration: 8 / 12 / 20 seconds.
-- Parallel streams: 1 / 4 / 8 / 16, automatically spread across up to 6 independent TCP connections.
+- Parallel streams: 1 / 4 / 8 / 16, automatically spread across all independent connections (Cloudflare ports + static mirrors).
 - Toggles: latency-under-load sampling, packet-loss burst.
 - Connection details: IP, ASN / ISP, city, Cloudflare colo, HTTP protocol, measurement method (streams × TCP connections).
 - Connection score (0–100) with usage suitability badges (4K streaming, HD streaming, video calls, competitive gaming, casual gaming, large downloads) and a one-line verdict.
@@ -36,9 +37,9 @@ License: MIT
 
 ## How it works
 
-The site is fully static (zero dependencies, no build step) and performs all measurements from the visitor's browser against public, CORS-enabled Cloudflare speed endpoints (`speed.cloudflare.com/__down`, `/__up`, `/meta`, served on HTTPS ports 443/2053/2083/2087/2096/8443 — the alternate ports let the browser open multiple independent TCP connections, mirroring multi-connection desktop test apps). No accounts, no ads, no tracking, no server-side logging.
+The site is fully static (zero dependencies, no build step) and performs all measurements from the visitor's browser. Download uses the public CORS-enabled Cloudflare speed endpoint (`speed.cloudflare.com/__down`) on HTTPS ports 443/2053/2083/2087/2096/8443 plus a self-hosted 16 MB incompressible test file (`/assets/testdata/spos-16mb.bin`) mirrored on jsDelivr and raw.githubusercontent — each host:port pair is a separate TCP connection. Upload POSTs to `speed.cloudflare.com/__up`. The final number uses Speedtest.net's documented trimmed-mean methodology (drop the two fastest samples, discard the slowest ~22%, average the rest). No accounts, no ads, no tracking, no server-side logging.
 
-Why results can differ between tools: some apps test against an ISP-local server over a short path (higher numbers), while SPOS Net measures to the nearest global Cloudflare edge over a realistic end-to-end path; small differences (±10%) between any two tools are normal.
+Why results can differ between tools: as of v2.3 the final figure uses the same methodology as Speedtest.net, so readings should closely match. Small differences (±10%) between any two tools are normal; larger gaps usually come from path differences or momentary congestion.
 
 ## Links
 
