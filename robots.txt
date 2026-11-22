@@ -1,4 +1,4 @@
 User-agent: *
 Allow: /
 
-Sitemap: https://spos-systems.github.io/SPOS-Net/sitemap.xml
+Sitemap: https://net.spos.ly/sitemap.xml

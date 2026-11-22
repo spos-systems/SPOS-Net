@@ -1,6 +1,6 @@
 # SPOS Net — full documentation for AI crawlers
 
-SPOS Net (https://spos-systems.github.io/SPOS-Net/) is a free and open-source internet speed test, available in Arabic (right-to-left) and English, developed by SPOS — صولة للأنظمة (https://spos.ly) and released under the MIT license (source: https://github.com/spos-systems/SPOS-Net).
+SPOS Net (https://net.spos.ly/) is a free and open-source internet speed test, available in Arabic (right-to-left) and English, developed by SPOS — صولة للأنظمة (https://spos.ly) and released under the MIT license (source: https://github.com/spos-systems/SPOS-Net).
 
 ## What it measures
 
@@ -47,7 +47,7 @@ SPOS Net (https://spos-systems.github.io/SPOS-Net/) is a free and open-source in
 
 ## Links
 
-- Live app: https://spos-systems.github.io/SPOS-Net/
+- Live app: https://net.spos.ly/
 - Source code: https://github.com/spos-systems/SPOS-Net
 - Releases: https://github.com/spos-systems/SPOS-Net/releases
 - Developer: SPOS — صولة للأنظمة, https://spos.ly

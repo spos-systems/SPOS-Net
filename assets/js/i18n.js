@@ -94,6 +94,7 @@ export const DICT = {
     },
 
     cap: {
+      title: 'ملاءمة الاستخدام',
       stream4k: 'بث 4K',
       streamHD: 'بث HD',
       calls: 'مكالمات فيديو HD',
@@ -119,6 +120,51 @@ export const DICT = {
       server: 'الخادم',
     },
 
+    c: {
+      title: 'معلومات الاتصال',
+      ip: 'عنوان IP',
+      ipShow: 'إظهار',
+      ipHide: 'إخفاء',
+      isp: 'مزود الخدمة',
+      asn: 'المشغّل (ASN)',
+      server: 'خادم القياس',
+      proto: 'البروتوكول',
+      net: 'نوع الشبكة',
+      loadedDl: 'الاستجابة أثناء التنزيل',
+      loadedUl: 'الاستجابة أثناء الرفع',
+      bloat: 'درجة الاستجابة (Bufferbloat)',
+    },
+
+    h: {
+      title: 'آخر القياسات',
+      clear: 'مسح',
+      clearConfirm: 'اضغط مجدداً للمسح',
+      note: 'تُحفظ القياسات على جهازك فقط ولا تُرسَل إلى أي خادم.',
+      csvAria: 'تصدير CSV',
+      best: 'أفضل سرعة',
+      count: 'قياس',
+    },
+
+    ins: {
+      title: 'تثبيت التطبيق',
+      aria: 'تثبيت التطبيق',
+      do: 'تثبيت الآن',
+      blurb: 'اختبار السرعة كتطبيق — يعمل من الشاشة الرئيسية، يفتح فوراً ويعرض آخر نتائجك حتى دون اتصال.',
+      iosTitle: 'على iPhone (سفاري):',
+      ios1: 'اضغط زر المشاركة',
+      ios2: 'مرر واختر «إضافة إلى الشاشة الرئيسية»',
+      ios3: 'اضغط «إضافة» — ستجد التطبيق على شاشتك',
+      andTitle: 'على أندرويد (كروم):',
+      and1: 'افتح قائمة النقاط الثلاث ⋮ أعلى المتصفح',
+      and2: 'اختر «تثبيت التطبيق» أو «إضافة إلى الشاشة الرئيسية»',
+      and3: 'أو استخدم زر «تثبيت الآن» بالأسفل إن ظهر',
+      deskTitle: 'على الكمبيوتر:',
+      desk1: 'اضغط أيقونة التثبيت في شريط العنوان',
+      desk2: 'أو من قائمة المتصفح اختر «تثبيت SPOS Net»',
+      otherTitle: 'إضافة يدوية',
+      other1: 'أضف الصفحة إلى المفضلة أو الشاشة الرئيسية من قائمة المتصفح',
+    },
+
     t: {
       copied: 'تم النسخ',
       copyFail: 'تعذر النسخ',
@@ -135,6 +181,7 @@ export const DICT = {
       offline: 'لا يوجد اتصال بالإنترنت — قد لا تكون النتائج دقيقة',
       sharedNote: 'تعرض هذه النتيجة مشارَكة من جهاز آخر',
       runYours: 'أجرِ اختبارك',
+      dismissed: 'يمكنك تثبيت التطبيق لاحقاً من زر «تثبيت» بالأعلى',
     },
 
     f: { tag: 'أداة مفتوحة المصدر لقياس سرعة الإنترنت', dev: 'من تطوير', install: 'تثبيت' },
@@ -154,6 +201,12 @@ export const DICT = {
 
     phase: { ping: 'Latency', download: 'Download', upload: 'Upload' },
     m: { ping: 'Ping', jitter: 'Jitter', loss: 'Packet loss', download: 'Download', upload: 'Upload' },
+
+    cap: {
+      stream4k: '4K streaming', streamHD: 'HD streaming', calls: 'HD video calls',
+      gameComp: 'Competitive gaming', game: 'Casual gaming', bigDl: 'Large downloads',
+      title: 'Suitability',
+    },
 
     gauge: {
       idle: 'Internet Speed Test',
@@ -228,6 +281,7 @@ export const DICT = {
     },
 
     cap: {
+      title: 'Suitability',
       stream4k: '4K streaming', streamHD: 'HD streaming', calls: 'HD video calls',
       gameComp: 'Competitive gaming', game: 'Casual gaming', bigDl: 'Large downloads',
     },
@@ -244,6 +298,50 @@ export const DICT = {
 
     conn: { waiting: 'Identifying connection…', fail: 'Could not identify connection', ip: 'IP', server: 'Server' },
 
+    c: {
+      title: 'Connection info',
+      ip: 'IP address',
+      ipShow: 'Show', ipHide: 'Hide',
+      isp: 'ISP',
+      asn: 'Network (ASN)',
+      server: 'Test server',
+      proto: 'Protocol',
+      net: 'Network type',
+      loadedDl: 'Latency while downloading',
+      loadedUl: 'Latency while uploading',
+      bloat: 'Responsiveness (Bufferbloat)',
+    },
+
+    h: {
+      title: 'Recent tests',
+      clear: 'Clear',
+      clearConfirm: 'Tap again to clear',
+      note: 'Tests are stored on your device only and never sent to any server.',
+      csvAria: 'Export CSV',
+      best: 'Best speed',
+      count: 'tests',
+    },
+
+    ins: {
+      title: 'Install the app',
+      aria: 'Install app',
+      do: 'Install now',
+      blurb: 'The speed test as an app — launches from your home screen, opens instantly and shows your last results even offline.',
+      iosTitle: 'On iPhone (Safari):',
+      ios1: 'Tap the Share button',
+      ios2: 'Scroll and choose “Add to Home Screen”',
+      ios3: 'Tap “Add” — the app appears on your home screen',
+      andTitle: 'On Android (Chrome):',
+      and1: 'Open the three-dot menu ⋮ at the top',
+      and2: 'Choose “Install app” or “Add to Home screen”',
+      and3: 'Or use the “Install now” button below when available',
+      deskTitle: 'On desktop:',
+      desk1: 'Click the install icon in the address bar',
+      desk2: 'Or choose “Install SPOS Net” from the browser menu',
+      otherTitle: 'Manual add',
+      other1: 'Bookmark this page or add it to your home screen from the browser menu',
+    },
+
     t: {
       copied: 'Copied', copyFail: 'Copy failed', aborted: 'Test stopped',
       netErr: 'Could not reach the measurement server — check your connection',
@@ -256,6 +354,7 @@ export const DICT = {
       offline: 'You are offline — results may not be accurate',
       sharedNote: 'This result was shared from another device',
       runYours: 'Run your own test',
+      dismissed: 'You can install the app later from the “Install” button above',
     },
 
     f: { tag: 'Open-source internet speed test', dev: 'Developed by', install: 'Install' },

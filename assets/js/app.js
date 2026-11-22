@@ -7,8 +7,12 @@ import { Gauge } from './gauge.js';
 const $ = (s, r = document) => r.querySelector(s);
 const $$ = (s, r = document) => [...r.querySelectorAll(s)];
 
-const SITE_URL = 'https://spos-systems.github.io/SPOS-Net/';
-const VERSION = '2.3.0';
+const SITE_URL = 'https://net.spos.ly/';
+const VERSION = '3.0.0';
+
+/* self-hosted webfonts (see assets/css/fonts.css) */
+const F_DISP = "'Cairo', 'Tajawal', sans-serif";       /* numerals, wordmark, dates */
+const F_TXT = "'Tajawal', 'Cairo', sans-serif";         /* Arabic labels */
 
 const DEFAULTS = { lang: 'ar', unit: 'mbps', duration: 12, streams: 8, loaded: true, loss: true, shareFmt: 'square' };
 
@@ -96,7 +100,10 @@ function applyLang() {
   if (state.result) {
     renderDetails(state.result);
     setGrade(scoreOf(state.result));
+    if (!$('#conn-panel').hidden) renderConnPanel(state.result);
+    if (!$('#caps-row').hidden) renderCaps(state.result);
   }
+  renderHistory();
   if (state.mode === 'running' && html.dataset.ph) setPhasePill(html.dataset.ph);
 }
 
@@ -264,7 +271,7 @@ const SPARK = {
     const unit = t(`u.${settings.unit}`);
     const disp = settings.unit === 'mbytes' ? max / 8 : settings.unit === 'kbps' ? max * 1000 : max;
     ctx.fillStyle = 'rgba(154,164,184,.75)';
-    ctx.font = '10px "IBM Plex Mono", ui-monospace, monospace';
+    ctx.font = `600 10px ${F_DISP}`;
     ctx.textAlign = 'left';
     ctx.textBaseline = 'alphabetic';
     ctx.fillText(`${Math.round(disp)} ${unit}`, 6, 12);
@@ -291,6 +298,8 @@ function resetUI() {
     n.classList.remove('good', 'mid', 'low');
   });
   SPARK.reset();
+  $('#conn-panel').hidden = true;
+  $('#caps-row').hidden = true;
   $('#m-download .unit').textContent = t(`u.${settings.unit}`);
   $('#m-upload .unit').textContent = t(`u.${settings.unit}`);
   $('#g-readout').hidden = true;
@@ -422,9 +431,14 @@ function finishTest(result) {
   setGrade(scoreOf(result));
   $('#actions').setAttribute('aria-hidden', 'false');
 
+  renderConnPanel(result);
+  renderCaps(result);
+
   const hist = loadHistory();
   hist.unshift(compact(result));
   saveHistory(hist);
+  renderHistory();
+  CONFETTI.fire();
   document.title = t('title');
 }
 
@@ -603,13 +617,257 @@ function renderDetails(r) {
   $('#d-img').onclick = () => { closeDrawers(); openShareModal(); };
   $('#d-json').onclick = () => exportJson();
   const ch = $('#btn-clearhist');
-  if (ch) ch.onclick = () => { saveHistory([]); renderDetails(r); toast(t('t.cleared')); };
+  if (ch) ch.onclick = () => { saveHistory([]); renderDetails(r); renderHistory(); toast(t('t.cleared')); };
 }
 
 function histLabel(ts) {
   const d = new Date(ts);
   return `${String(d.getHours()).padStart(2, '0')}:${String(d.getMinutes()).padStart(2, '0')} · ${d.getDate()}/${d.getMonth() + 1}`;
 }
+
+/* ── connection panel (main page, Ookla-style) ───────────── */
+
+let ipRevealed = false;
+
+function maskIp(ip) {
+  if (!ip) return '—';
+  if (ip.includes(':')) {
+    const g = ip.split(':');
+    return g.slice(0, Math.max(1, g.length - 2)).concat('••••').join(':');
+  }
+  const o = ip.split('.');
+  return o.length === 4 ? o.slice(0, 3).concat('•••').join('.') : ip;
+}
+
+function netTypeLabel() {
+  const nc = navigator.connection || navigator.mozConnection || navigator.webkitConnection;
+  if (!nc) return '';
+  const parts = [];
+  if (nc.effectiveType) parts.push(String(nc.effectiveType).toUpperCase());
+  if (nc.type && nc.type !== 'unknown') parts.push(nc.type);
+  if (typeof nc.downlink === 'number' && nc.downlink > 0) parts.push(`~${nc.downlink} Mbps`);
+  return parts.join(' · ');
+}
+
+function renderConnPanel(r) {
+  const panel = $('#conn-panel');
+  if (!panel) return;
+  const meta = r.meta || {};
+  const bl = bloatOf(r);
+  const row = (k, v) => `<div class="cp-row"><span class="k">${k}</span><span class="v"><bdi>${v}</bdi></span></div>`;
+
+  const ipHtml = meta.ip
+    ? `${ipRevealed ? escapeHtml(meta.ip) : maskIp(meta.ip)}<button class="ip-toggle" id="ip-toggle" type="button">${t(ipRevealed ? 'c.ipHide' : 'c.ipShow')}</button>`
+    : '—';
+  const server = `Cloudflare${meta.colo ? ' · ' + escapeHtml(meta.colo) : ''}`;
+  const ldAvg = (arr) => (arr && arr.length ? arr.reduce((a, b) => a + b, 0) / arr.length : null);
+  const ldl = ldAvg(r.loaded?.dl), lul = ldAvg(r.loaded?.ul);
+  const blHtml = bl
+    ? `<span class="cp-grade ${bl.cls}">${bl.grade}</span> <small>+${Math.round(bl.inc)} ms</small>`
+    : `<small>—</small>`;
+
+  panel.querySelector('.cp-grid').innerHTML = [
+    row(t('c.ip'), ipHtml),
+    row(t('c.isp'), meta.org ? escapeHtml(meta.org) : '—'),
+    row(t('c.server'), server),
+    row(t('c.proto'), meta.proto ? escapeHtml(meta.proto) : '—'),
+    row(t('c.asn'), meta.asn ? 'AS' + meta.asn : '—'),
+    row(t('c.net'), netTypeLabel() || '—'),
+    row(t('c.loadedDl'), ldl == null ? '—' : `${fmtMs(ldl)} ms`),
+    row(t('c.loadedUl'), lul == null ? '—' : `${fmtMs(lul)} ms`),
+    row(t('c.bloat'), blHtml),
+  ].join('');
+
+  const tog = $('#ip-toggle');
+  if (tog) tog.addEventListener('click', () => { ipRevealed = !ipRevealed; renderConnPanel(r); });
+  panel.hidden = false;
+}
+
+/* ── suitability chips (main page) ───────────────────────── */
+
+function renderCaps(r) {
+  const rowEl = $('#caps-row');
+  if (!rowEl) return;
+  const okSvg = '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="3" stroke-linecap="round" stroke-linejoin="round"><path d="M20 6 9 17l-5-5"/></svg>';
+  const noSvg = '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.6" stroke-linecap="round"><path d="M18 6 6 18M6 6l12 12"/></svg>';
+  rowEl.querySelector('.chips').innerHTML = capabilitiesOf(r).map((c) => `
+    <span class="chip ${c.ok ? 'ok' : 'no'}">
+      <i class="st">${c.ok ? okSvg : noSvg}</i>
+      <span class="lbl">${t('cap.' + c.k)}</span>
+      <small>${c.need}</small>
+    </span>`).join('');
+  rowEl.hidden = false;
+}
+
+/* ── local history (main page) ───────────────────────────── */
+
+function drawHistChart(hist) {
+  const cv = $('#hs-chart');
+  if (!cv) return;
+  const data = hist.slice(0, 14).reverse();          /* oldest → newest */
+  const rect = cv.getBoundingClientRect();
+  if (!rect.width || !data.length) return;
+  const dpr = Math.min(2, devicePixelRatio || 1);
+  const w = rect.width, h = rect.height;
+  cv.width = Math.round(w * dpr);
+  cv.height = Math.round(h * dpr);
+  const ctx = cv.getContext('2d');
+  ctx.setTransform(dpr, 0, 0, dpr, 0, 0);
+  ctx.clearRect(0, 0, w, h);
+
+  const max = niceMax(Math.max(...data.map((d) => d.dl)) * 1.15 || 1);
+  const X = (i) => (data.length === 1 ? w / 2 : 10 + (i / (data.length - 1)) * (w - 20));
+  const Y = (v) => h - 6 - (v / max) * (h - 16);
+
+  /* grid */
+  ctx.strokeStyle = 'rgba(148,163,194,.09)';
+  ctx.lineWidth = 1;
+  for (const f of [0.5, 1]) {
+    const y = Y(max * f);
+    ctx.beginPath(); ctx.moveTo(0, y); ctx.lineTo(w, y); ctx.stroke();
+  }
+
+  /* area + line */
+  const grad = ctx.createLinearGradient(0, 0, 0, h);
+  grad.addColorStop(0, 'rgba(56,189,248,.28)');
+  grad.addColorStop(1, 'rgba(56,189,248,0)');
+  ctx.beginPath();
+  ctx.moveTo(X(0), Y(data[0].dl));
+  data.forEach((d, i) => ctx.lineTo(X(i), Y(d.dl)));
+  ctx.lineTo(X(data.length - 1), h);
+  ctx.lineTo(X(0), h);
+  ctx.closePath();
+  ctx.fillStyle = grad;
+  ctx.fill();
+
+  ctx.beginPath();
+  data.forEach((d, i) => (i ? ctx.lineTo(X(i), Y(d.dl)) : ctx.moveTo(X(i), Y(d.dl))));
+  const lg = ctx.createLinearGradient(0, 0, w, 0);
+  lg.addColorStop(0, '#22d3ee');
+  lg.addColorStop(1, '#818cf8');
+  ctx.strokeStyle = lg;
+  ctx.lineWidth = 2;
+  ctx.lineJoin = 'round';
+  ctx.stroke();
+
+  /* dots — last test highlighted */
+  data.forEach((d, i) => {
+    const last = i === data.length - 1;
+    ctx.beginPath();
+    ctx.arc(X(i), Y(d.dl), last ? 4 : 2.4, 0, 7);
+    ctx.fillStyle = last ? '#fff' : 'rgba(125,211,252,.85)';
+    ctx.fill();
+  });
+
+  /* max label */
+  ctx.direction = 'ltr';
+  ctx.font = `600 10px ${F_DISP}`;
+  ctx.fillStyle = 'rgba(154,164,184,.8)';
+  ctx.textAlign = 'left';
+  ctx.textBaseline = 'alphabetic';
+  const unit = t(`u.${settings.unit}`);
+  const disp = settings.unit === 'mbytes' ? max / 8 : settings.unit === 'kbps' ? max * 1000 : max;
+  ctx.fillText(`${Math.round(disp)} ${unit}`, 6, 11);
+}
+
+function renderHistory() {
+  const sec = $('#history-sec');
+  if (!sec) return;
+  const hist = loadHistory();
+  sec.hidden = !hist.length;
+  if (!hist.length) return;
+
+  const best = Math.max(...hist.map((h) => h.dl));
+  sec.querySelector('.hs-list').innerHTML = hist.slice(0, 8).map((h) => {
+    const now = state.result && h.ts === (state.result.sharedCompact?.ts || state.result.ts);
+    return `
+    <div class="hs-row${now ? ' now' : ''}">
+      <span class="hs-time">${histLabel(h.ts)}</span>
+      <span class="hs-dl"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"><path d="M12 4v12m0 0 5-5m-5 5-5-5"/><path d="M5 20h14"/></svg><b>${fmtSpeed(h.dl)}</b></span>
+      <span class="hs-ul"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"><path d="M12 20V8m0 0 5 5m-5-5-5 5"/><path d="M5 4h14"/></svg><b>${fmtSpeed(h.ul)}</b></span>
+      <span class="hs-pg">${fmtMs(h.pg)}<small>ms</small></span>
+      <span class="hs-score">${h.sc ?? '—'}</span>
+    </div>`;
+  }).join('');
+
+  const bestEl = sec.querySelector('.hs-best');
+  if (bestEl) bestEl.remove();
+  sec.querySelector('.hs-actions').insertAdjacentHTML('beforebegin',
+    `<span class="hs-best">${t('h.best')}: <b>${fmtSpeed(best)} ${t(`u.${settings.unit}`)}</b><span class="hs-cnt"> · ${hist.length} ${t('h.count')}</span></span>`);
+
+  drawHistChart(hist);
+}
+
+function exportCsv() {
+  const hist = loadHistory();
+  if (!hist.length) return;
+  const head = 'date,download_mbps,upload_mbps,ping_ms,jitter_ms,loss_pct,score';
+  const rows = hist.map((h) => [
+    new Date(h.ts).toISOString(),
+    h.dl, h.ul, h.pg, h.jt, h.ls ?? '', h.sc ?? '',
+  ].join(','));
+  downloadBlob(new Blob(['\uFEFF' + [head, ...rows].join('\n')], { type: 'text/csv;charset=utf-8' }), 'sposnet-history.csv');
+}
+
+/* ── celebration on completion (lightweight, reduced-motion aware) ── */
+
+const CONFETTI = {
+  fire() {
+    if (matchMedia('(prefers-reduced-motion: reduce)').matches) return;
+    const box = $('#gauge-box')?.getBoundingClientRect();
+    if (!box) return;
+    const cv = document.createElement('canvas');
+    const dpr = Math.min(2, devicePixelRatio || 1);
+    cv.width = innerWidth * dpr;
+    cv.height = innerHeight * dpr;
+    cv.className = 'confetti';
+    document.body.appendChild(cv);
+    const ctx = cv.getContext('2d');
+    ctx.scale(dpr, dpr);
+    const colors = ['#22d3ee', '#3b82f6', '#818cf8', '#c084fc', '#f472b6', '#34d399', '#fbbf24'];
+    const cx = box.left + box.width / 2;
+    const cy = box.top + box.height / 2;
+    const N = 110;
+    const parts = Array.from({ length: N }, () => {
+      const a = -Math.PI / 2 + (Math.random() - 0.5) * 2.4;
+      const v = 5 + Math.random() * 8;
+      return {
+        x: cx, y: cy,
+        vx: Math.cos(a) * v, vy: Math.sin(a) * v - 2,
+        s: 3 + Math.random() * 5,
+        r: Math.random() * Math.PI, vr: (Math.random() - 0.5) * 0.3,
+        c: colors[(Math.random() * colors.length) | 0],
+        life: 1,
+      };
+    });
+    const t0 = performance.now();
+    const step = (now) => {
+      const el = now - t0;
+      ctx.clearRect(0, 0, innerWidth, innerHeight);
+      let alive = false;
+      for (const p of parts) {
+        p.life = 1 - el / 1500;
+        if (p.life <= 0) continue;
+        alive = true;
+        p.vy += 0.22;
+        p.vx *= 0.992;
+        p.x += p.vx;
+        p.y += p.vy;
+        p.r += p.vr;
+        ctx.save();
+        ctx.globalAlpha = Math.max(0, p.life);
+        ctx.translate(p.x, p.y);
+        ctx.rotate(p.r);
+        ctx.fillStyle = p.c;
+        ctx.fillRect(-p.s / 2, -p.s / 2, p.s, p.s * 0.62);
+        ctx.restore();
+      }
+      if (alive && el < 1600) requestAnimationFrame(step);
+      else cv.remove();
+    };
+    requestAnimationFrame(step);
+  },
+};
 
 /* ── drawers / share sheet ───────────────────────────────── */
 
@@ -827,13 +1085,48 @@ function drawCardGauge(x, cx, cy, R, frac, lw) {
   x.fill();
 }
 
+/* RTL-safe canvas text primitives.
+ * Every string is drawn as ONE fillText run with an explicit `direction`;
+ * lines that combine Arabic + Latin (e.g. "سرعة التنزيل · Mbps") are
+ * composed from two separately measured runs, so no bidi reordering —
+ * regardless of browser support for ctx.direction — can ever scramble
+ * the card text. */
+function run(x, text, font, px, py, align, dir, color) {
+  x.font = font;
+  x.direction = dir;
+  x.textAlign = align;
+  x.fillStyle = color;
+  x.fillText(text, px, py);
+}
+
+/* logical pair [a then b] centered at cx — a lands on the start side
+ * (right in RTL, left in LTR), b on the end side */
+function pairCenter(x, RTL, a, aFont, aDir, b, bFont, cx, cy, gap, aColor, bColor) {
+  x.font = aFont;
+  const wA = x.measureText(a).width;
+  let wB = 0;
+  if (b) { x.font = bFont; wB = x.measureText(b).width; }
+  const total = wA + (b ? gap + wB : 0);
+  const start = RTL ? cx + total / 2 : cx - total / 2;
+  run(x, a, aFont, start, cy, RTL ? 'right' : 'left', aDir, aColor);
+  if (b) run(x, b, bFont, start + (RTL ? -1 : 1) * (wA + gap), cy, RTL ? 'right' : 'left', 'ltr', bColor);
+}
+
+/* strictly-LTR pair, e.g. "25.4 Mbps" — value first, unit after */
+function ltrPair(x, a, aFont, b, bFont, cx, cy, gap, aColor, bColor) {
+  x.font = aFont;
+  const wA = x.measureText(a).width;
+  x.font = bFont;
+  const wB = x.measureText(b).width;
+  const left = cx - (wA + gap + wB) / 2;
+  run(x, a, aFont, left, cy, 'left', 'ltr', aColor);
+  run(x, b, bFont, left + wA + gap, cy, 'left', 'ltr', bColor);
+}
+
 /* draws the share card into ctx within a W×H design space (call after scaling) */
 function drawCard(x, W, H, c, r) {
-  const L = getLang();
-  const RTL = L === 'ar';
-  const SANS = "'IBM Plex Sans Arabic', 'Segoe UI', sans-serif";
-  const MONO = "'IBM Plex Mono', ui-monospace, monospace";
-  x.direction = RTL ? 'rtl' : 'ltr';
+  const RTL = getLang() === 'ar';
+  const DISP = F_DISP, TXT = F_TXT;
   x.textBaseline = 'middle';
 
   /* background */
@@ -858,16 +1151,9 @@ function drawCard(x, W, H, c, r) {
   const endEdge = RTL ? pad : W - pad;
   const dir = RTL ? -1 : 1;
 
-  drawMark(x, startEdge - dir * mkS / 2, hY, mkS);
-  x.fillStyle = '#eef2fa';
-  x.font = `700 ${Math.round(mkS * 0.62)}px ${SANS}`;
-  x.textAlign = RTL ? 'right' : 'left';
-  x.fillText('SPOS Net', startEdge + dir * (mkS / 2 + 18), hY + 1);
-
-  x.fillStyle = '#66738e';
-  x.font = `500 ${sq || pt_ ? 24 : 26}px ${SANS}`;
-  x.textAlign = RTL ? 'left' : 'right';
-  x.fillText(`${ds}${c.id ? '  ·  ' + c.id : ''}`, endEdge, hY + 1);
+  drawMark(x, startEdge + dir * mkS / 2, hY, mkS);
+  run(x, 'SPOS Net', `800 ${Math.round(mkS * 0.56)}px ${DISP}`, startEdge + dir * (mkS + 18), hY + 1, RTL ? 'right' : 'left', 'ltr', '#eef2fa');
+  run(x, ds + (c.id ? '  ·  ' + c.id : ''), `500 ${sq || pt_ ? 24 : 26}px ${DISP}`, endEdge, hY + 1, RTL ? 'left' : 'right', 'ltr', '#66738e');
 
   /* ── gauge + big number ── */
   const gx = W / 2;
@@ -876,16 +1162,21 @@ function drawCard(x, W, H, c, r) {
   const numSize = pt_ ? 150 : sq ? 108 : 120;
   drawCardGauge(x, gx, gy, gR, logScore(c.dl, 0.5, 1000), gR * 0.062);
 
-  x.textAlign = 'center';
-  x.fillStyle = '#f2f5fb';
-  x.font = `500 ${numSize}px ${MONO}`;
-  x.fillText(fmtSpeed(c.dl), gx, gy - numSize * 0.12);
-  x.fillStyle = '#8b97b0';
-  x.font = `600 ${Math.round(numSize * 0.28)}px ${SANS}`;
-  x.fillText(`Mbps · ${RTL ? 'التنزيل' : 'Download'}`, gx, gy + numSize * 0.52);
+  run(x, fmtSpeed(c.dl), `700 ${numSize}px ${DISP}`, gx, gy - numSize * 0.14, 'center', 'ltr', '#f2f5fb');
+  const lblSize = Math.round(numSize * 0.28);
+  pairCenter(x, RTL, t('gauge.download'), `600 ${lblSize}px ${TXT}`, RTL ? 'rtl' : 'ltr', 'Mbps', `600 ${lblSize}px ${DISP}`, gx, gy + numSize * 0.52, 16);
 
   /* grade pill under the number */
-  const pillW = Math.round(numSize * 1.7), pillH = Math.round(numSize * 0.42);
+  const gLbl = t(`grade.${score.grade}`);
+  const gScore = `${c.sc}/100`;
+  const pFont = `700 ${Math.round(numSize * 0.21)}px ${TXT}`;
+  const pNumFont = `700 ${Math.round(numSize * 0.21)}px ${DISP}`;
+  x.font = pFont;
+  const gw = x.measureText(gLbl).width;
+  x.font = pNumFont;
+  const sw = x.measureText(gScore).width;
+  const pillH = Math.round(numSize * 0.42);
+  const pillW = Math.round(gw + sw + 110);
   const pillY = gy + numSize * 0.52 + numSize * 0.38;
   roundRect(x, gx - pillW / 2, pillY, pillW, pillH, pillH / 2);
   x.fillStyle = 'rgba(255,255,255,.05)';
@@ -893,16 +1184,14 @@ function drawCard(x, W, H, c, r) {
   x.strokeStyle = gradeColor + '66';
   x.lineWidth = 2;
   x.stroke();
-  x.fillStyle = gradeColor;
-  x.font = `700 ${Math.round(pillH * 0.5)}px ${SANS}`;
-  x.fillText(`${t(`grade.${score.grade}`)} · ${c.sc}/100`, gx, pillY + pillH / 2 + 1);
+  pairCenter(x, RTL, gLbl, pFont, RTL ? 'rtl' : 'ltr', gScore, pNumFont, gx, pillY + pillH / 2 + 1, 20, gradeColor, gradeColor);
 
   /* ── metric tiles ── */
   const tiles = [
-    [RTL ? 'الرفع' : 'Upload', fmtSpeed(c.ul), 'Mbps', '#c084fc'],
-    [RTL ? 'الاستجابة' : 'Ping', fmtMs(c.pg), 'ms', '#7ee2b8'],
-    [RTL ? 'التذبذب' : 'Jitter', fmtMs(c.jt), 'ms', '#fcd34d'],
-    [RTL ? 'فقدان الحزم' : 'Loss', c.ls == null ? '—' : String(c.ls), '%', '#fda4af'],
+    [t('m.upload'), fmtSpeed(c.ul), 'Mbps', '#c084fc'],
+    [t('m.ping'), fmtMs(c.pg), 'ms', '#7ee2b8'],
+    [t('m.jitter'), fmtMs(c.jt), 'ms', '#fcd34d'],
+    [t('m.loss'), c.ls == null ? '—' : String(c.ls), '%', '#fda4af'],
   ];
 
   if (pt_) {
@@ -919,19 +1208,8 @@ function drawCard(x, W, H, c, r) {
       x.strokeStyle = 'rgba(255,255,255,.07)';
       x.lineWidth = 2;
       x.stroke();
-      x.fillStyle = '#66738e';
-      x.font = `600 30px ${SANS}`;
-      x.textAlign = RTL ? 'right' : 'left';
-      x.fillText(label, RTL ? tx + tw - 34 : tx + 34, ty + 44);
-      x.fillStyle = color;
-      x.font = `600 62px ${MONO}`;
-      x.textAlign = 'center';
-      const cxT = tx + tw / 2;
-      x.fillText(`${val}`, cxT - 20, ty + 102);
-      x.fillStyle = '#66738e';
-      x.font = `600 28px ${SANS}`;
-      x.textAlign = 'left';
-      x.fillText(unit, cxT + (String(val).length * 30) / 2 + 8, ty + 108);
+      run(x, label, `600 30px ${TXT}`, RTL ? tx + tw - 34 : tx + 34, ty + 44, RTL ? 'right' : 'left', RTL ? 'rtl' : 'ltr', '#66738e');
+      ltrPair(x, val, `600 60px ${DISP}`, unit, `600 26px ${DISP}`, tx + tw / 2, ty + 102, 10, color, '#66738e');
     });
   } else {
     /* square / landscape: one row of four */
@@ -942,13 +1220,8 @@ function drawCard(x, W, H, c, r) {
     x.beginPath(); x.moveTo(pad, rowY - 44); x.lineTo(W - pad, rowY - 44); x.stroke();
     tiles.forEach(([label, val, unit, color], i) => {
       const tx = pad + tw * i + tw / 2;
-      x.fillStyle = '#66738e';
-      x.font = `600 ${sq ? 26 : 28}px ${SANS}`;
-      x.textAlign = 'center';
-      x.fillText(label, tx, rowY - 6);
-      x.fillStyle = color;
-      x.font = `600 ${sq ? 48 : 52}px ${MONO}`;
-      x.fillText(`${val} ${unit}`, tx, rowY + 48);
+      run(x, label, `600 ${sq ? 26 : 28}px ${TXT}`, tx, rowY - 6, 'center', RTL ? 'rtl' : 'ltr', '#66738e');
+      ltrPair(x, val, `600 ${sq ? 46 : 50}px ${DISP}`, unit, `600 ${sq ? 24 : 26}px ${DISP}`, tx, rowY + 48, 8, color, '#66738e');
       if (i) {
         x.strokeStyle = 'rgba(255,255,255,.07)';
         x.lineWidth = 2;
@@ -959,14 +1232,13 @@ function drawCard(x, W, H, c, r) {
 
   /* ── footer: company credit (start side) · url (end side) ── */
   const fY = pt_ ? 1790 : sq ? 986 : 1004;
-  x.textAlign = RTL ? 'right' : 'left';
-  const creditLabel = RTL ? 'تطوير' : 'Developed by';
-  x.fillStyle = '#66738e';
-  x.font = `500 ${sq || pt_ ? 26 : 28}px ${SANS}`;
-  x.fillText(creditLabel, startEdge, fY);
+  const creditLabel = t('f.dev');
+  run(x, creditLabel, `500 ${sq || pt_ ? 26 : 28}px ${TXT}`, startEdge, fY, RTL ? 'right' : 'left', RTL ? 'rtl' : 'ltr', '#66738e');
+  x.font = `500 ${sq || pt_ ? 26 : 28}px ${TXT}`;
   const cw = x.measureText(creditLabel).width;
   const logoS = 44;
-  const lcx = startEdge - dir * (cw + logoS / 2 + 22);
+  /* walk inwards from the start edge: label → gap → logo → gap → company name */
+  const lcx = startEdge + dir * (cw + 22 + logoS / 2);
   const logo = logoCache.img;
   if (logo) {
     x.save();
@@ -975,22 +1247,29 @@ function drawCard(x, W, H, c, r) {
     x.drawImage(logo, lcx - logoS / 2, fY - logoS / 2, logoS, logoS);
     x.restore();
   }
-  x.fillStyle = '#c6cfdf';
-  x.font = `700 ${sq || pt_ ? 27 : 29}px ${SANS}`;
-  x.fillText(RTL ? 'صولة للأنظمة' : 'SPOS Systems', lcx - dir * (logoS / 2 + 16), fY);
+  run(x, RTL ? 'صولة للأنظمة' : 'SPOS Systems', `700 ${sq || pt_ ? 27 : 29}px ${TXT}`, lcx + dir * (logoS / 2 + 16), fY, RTL ? 'right' : 'left', RTL ? 'rtl' : 'ltr', '#c6cfdf');
+  run(x, 'net.spos.ly', `700 ${sq || pt_ ? 25 : 27}px ${DISP}`, endEdge, fY, RTL ? 'left' : 'right', 'ltr', '#38bdf8');
+}
 
-  x.textAlign = RTL ? 'left' : 'right';
-  x.fillStyle = '#38bdf8';
-  x.font = `600 ${sq || pt_ ? 25 : 27}px ${MONO}`;
-  x.direction = 'ltr';
-  x.fillText('spos-systems.github.io/SPOS-Net', endEdge, fY);
-  x.direction = RTL ? 'rtl' : 'ltr';
+/* make sure every family/weight the card uses is really loaded —
+ * document.fonts.ready alone can settle before the Arabic subsets arrive,
+ * which is what scrambled shared cards on some phones */
+async function ensureCardFonts() {
+  try {
+    await Promise.all([
+      document.fonts.load(`700 120px ${F_DISP}`, 'سرعة 123.4'),
+      document.fonts.load(`800 40px ${F_DISP}`, 'SPOS Net net.spos.ly'),
+      document.fonts.load(`600 30px ${F_TXT}`, 'التنزيل الرفع صولة للأنظمة'),
+      document.fonts.load(`500 26px ${F_TXT}`, 'سرعة الاستجابة فقدان'),
+    ]);
+    await document.fonts.ready;
+  } catch { /* fall back to whatever is available */ }
 }
 
 /* renders the selected format into a blob (2× supersampled PNG) */
 async function buildCardBlob(r, fmt) {
   const c = r.sharedCompact || compact(r);
-  await document.fonts.ready;
+  await ensureCardFonts();
   logoCache.img = logoCache.img || (await loadCompanyLogo());
   const { w: W, h: H } = FORMATS[fmt] || FORMATS.square;
   const cv = document.createElement('canvas');
@@ -1009,7 +1288,7 @@ async function renderSharePreview() {
   const r = state.result;
   if (!r) return;
   const c = r.sharedCompact || compact(r);
-  await document.fonts.ready.catch(() => {});
+  await ensureCardFonts();
   logoCache.img = logoCache.img || (await loadCompanyLogo());
   const { w: W, h: H } = FORMATS[shareFmt];
   const cv = $('#share-cv');
@@ -1119,6 +1398,9 @@ function trySharedView() {
 
     setGrade(scoreOf(r));
     $('#actions').setAttribute('aria-hidden', 'false');
+    renderConnPanel(r);
+    renderCaps(r);
+    renderHistory();
 
     const again = $('#btn-again');
     again.querySelector('span').textContent = t('t.runYours');
@@ -1227,6 +1509,7 @@ function boot() {
   reflectSettings();
   bindSettings();
   resetUI();
+  renderHistory();
   $('#ver-tag').textContent = `SPOS Net v${VERSION}`;
 
   /* PWA: register the service worker (offline app shell) */
@@ -1289,31 +1572,89 @@ function boot() {
     renderSharePreview();
   });
 
-  /* PWA install */
+  /* PWA install — the button is ALWAYS visible on phones so installation
+     never depends on the browser deciding to fire beforeinstallprompt */
   let installEvt = null;
   const isIOS = /iphone|ipad|ipod/i.test(navigator.userAgent)
     || (navigator.platform === 'MacIntel' && navigator.maxTouchPoints > 1);
+  const isAndroid = /android/i.test(navigator.userAgent);
   const isStandalone = matchMedia('(display-mode: standalone)').matches || navigator.standalone === true;
-  if (isIOS && !isStandalone) $('#btn-install').hidden = false;
+
+  function hideInstallBtn() { $('#btn-install').hidden = true; }
+
+  function renderInstallSteps() {
+    const list = (titleKey, keys) => `
+      <div class="ins-block">
+        <div class="ins-t">${t(titleKey)}</div>
+        <ol>${keys.map((k) => `<li>${t(k)}</li>`).join('')}</ol>
+      </div>`;
+    $('#ins-steps').innerHTML = isIOS
+      ? list('ins.iosTitle', ['ins.ios1', 'ins.ios2', 'ins.ios3'])
+      : isAndroid
+        ? list('ins.andTitle', ['ins.and1', 'ins.and2', 'ins.and3'])
+        : list('ins.deskTitle', ['ins.desk1', 'ins.desk2']);
+    $('#btn-ins-do').hidden = !installEvt;
+  }
+
+  if (isStandalone) hideInstallBtn();
+
   window.addEventListener('beforeinstallprompt', (e) => {
     e.preventDefault();
     installEvt = e;
-    $('#btn-install').hidden = false;
   });
-  $('#btn-install').addEventListener('click', async () => {
-    if (!installEvt) {
-      if (isIOS) toast(t('t.iosInstall'), 5600);   /* Safari: Share → Add to Home Screen */
-      return;
-    }
-    installEvt.prompt();
-    await installEvt.userChoice.catch(() => {});
+
+  async function promptInstall() {
+    if (!installEvt) return false;
+    const ev = installEvt;
     installEvt = null;
-    $('#btn-install').hidden = true;
+    ev.prompt();
+    const choice = await ev.userChoice.catch(() => null);
+    if (choice && choice.outcome === 'dismissed') toast(t('t.dismissed'), 3600);
+    return true;
+  }
+
+  $('#btn-install').addEventListener('click', async () => {
+    if (isStandalone) return;
+    if (await promptInstall()) return;
+    renderInstallSteps();
+    openDrawer('#dr-install');
+  });
+  $('#btn-ins-do').addEventListener('click', async () => {
+    closeDrawers();
+    if (!(await promptInstall())) {
+      renderInstallSteps();
+      openDrawer('#dr-install');
+    }
   });
   window.addEventListener('appinstalled', () => {
     installEvt = null;
-    $('#btn-install').hidden = true;
+    hideInstallBtn();
     toast(t('t.installed'));
+  });
+
+  /* local-history controls */
+  $('#btn-hcsv').addEventListener('click', exportCsv);
+  let clearArmed = 0;
+  $('#btn-hclear').addEventListener('click', (e) => {
+    const now = Date.now();
+    if (now - clearArmed < 2600) {
+      saveHistory([]);
+      renderHistory();
+      toast(t('t.cleared'));
+      e.currentTarget.textContent = t('h.clear');
+      e.currentTarget.classList.remove('warn');
+      clearArmed = 0;
+    } else {
+      clearArmed = now;
+      e.currentTarget.textContent = t('h.clearConfirm');
+      e.currentTarget.classList.add('warn');
+      setTimeout(() => {
+        if (Date.now() - clearArmed >= 2500) {
+          const b = $('#btn-hclear');
+          if (b) { b.textContent = t('h.clear'); b.classList.remove('warn'); }
+        }
+      }, 2700);
+    }
   });
 
   /* keyboard shortcuts: Space · S · D (ignored while typing or in dialogs) */

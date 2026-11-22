@@ -107,33 +107,76 @@ export class Engine {
   }
 
   /* ── connection meta ─────────────────────────────────────── */
+  /* sources are tried in order and MERGED, so the panel always shows as
+     much as possible: Cloudflare /meta (colo + ISP + protocol), the __down
+     response headers (IP at minimum), then ipwho.is (ISP/ASN/geo). */
   async fetchMeta(signal) {
-    try {
-      const r = await fetch(`${BASE}/__down?bytes=0&r=${Math.random()}`, { cache: 'no-store', signal });
-      const h = (k) => r.headers.get(k) || '';
-      if (h('cf-meta-ip')) {
-        return {
-          ip: h('cf-meta-ip'), asn: Number(h('cf-meta-asn')) || null, org: '',
-          country: h('cf-meta-country'), city: h('cf-meta-city'),
-          colo: h('cf-meta-colo'), coloCity: h('cf-meta-city'), proto: '',
-        };
-      }
-    } catch { /* fall through */ }
+    let m = null;
+
     try {
       const r = await fetch(`${BASE}/meta`, { cache: 'no-store', signal });
       if (r.ok) {
         const j = await r.json();
         if (j && j.clientIp) {
           const colo = typeof j.colo === 'object' ? j.colo : { iata: j.colo, city: j.city };
-          return {
+          m = {
             ip: j.clientIp, asn: j.asn, org: j.asOrganization,
             country: j.country, city: j.city, colo: colo?.iata || '',
             coloCity: colo?.city || j.city || '', proto: j.httpProtocol || '',
           };
         }
       }
-    } catch { /* ignore */ }
-    return null;
+    } catch { /* fall through */ }
+
+    if (!m) {
+      try {
+        const r = await fetch(`${BASE}/__down?bytes=0&r=${Math.random()}`, { cache: 'no-store', signal });
+        const h = (k) => r.headers.get(k) || '';
+        if (h('cf-meta-ip')) {
+          m = {
+            ip: h('cf-meta-ip'), asn: Number(h('cf-meta-asn')) || null, org: '',
+            country: h('cf-meta-country'), city: h('cf-meta-city'),
+            colo: h('cf-meta-colo'), coloCity: h('cf-meta-city'), proto: '',
+          };
+        }
+      } catch { /* fall through */ }
+    }
+
+    /* ISP / ASN / geo still missing → ipwho.is fills the gaps */
+    if (!m || (!m.org && !m.asn)) {
+      try {
+        const r = await fetch('https://ipwho.is/', { cache: 'no-store', signal });
+        if (r.ok) {
+          const j = await r.json();
+          if (j && j.ip) {
+            const w = {
+              ip: j.ip, asn: j.connection?.asn ?? null,
+              org: j.connection?.isp || j.connection?.org || '',
+              country: j.country || '', city: j.city || '', colo: '', coloCity: '', proto: '',
+            };
+            m = m
+              ? { ...w, ...Object.fromEntries(Object.entries(m).filter(([, v]) => v)) }
+              : w;
+          }
+        }
+      } catch { /* ignore */ }
+    }
+
+    if (m && !m.proto) m.proto = this.#nextProto();
+    return m;
+  }
+
+  /* negotiated HTTP protocol from Resource Timing (speed.cloudflare.com
+     sends Timing-Allow-Origin: * so nextHopProtocol is readable) */
+  #nextProto() {
+    try {
+      const es = performance.getEntriesByType('resource').filter((e) => e.name.includes('speed.cloudflare.com'));
+      const p = es[es.length - 1]?.nextHopProtocol || '';
+      if (p === 'h3') return 'HTTP/3';
+      if (p === 'h2') return 'HTTP/2';
+      if (p) return p.replace('http/', 'HTTP/').toUpperCase();
+    } catch { /* not supported */ }
+    return '';
   }
 
   async fetchAsnName(asn) {
@@ -213,7 +256,7 @@ export class Engine {
       meta: opts.meta || null,
       ping: { samples: [], min: 0, med: 0, avg: 0, max: 0, jitter: 0 },
       loss: { sent: 0, lost: 0, pct: null },
-      loaded: { samples: [], avg: null, max: null },
+      loaded: { samples: [], dl: [], ul: [], avg: null, max: null, dlAvg: null, ulAvg: null },
       download: { avg: 0, sustained: 0, peak: 0, bytes: 0, ms: 0 },
       upload: { avg: 0, sustained: 0, peak: 0, bytes: 0, ms: 0 },
       streams: Math.max(1, opts.streams | 0),
@@ -277,6 +320,10 @@ export class Engine {
         const s = res.loaded.samples;
         res.loaded.avg = s.reduce((a, b) => a + b, 0) / s.length;
         res.loaded.max = Math.max(...s);
+      }
+      for (const tag of ['dl', 'ul']) {
+        const a = res.loaded[tag];
+        if (a && a.length) res.loaded[tag + 'Avg'] = a.reduce((x, y) => x + y, 0) / a.length;
       }
       this.h.done?.(res);
     } catch (e) {
@@ -342,14 +389,16 @@ export class Engine {
       }
     }, 90);
 
-    /* loaded-latency probes (primary port, not counted as throughput) */
+    /* loaded-latency probes (primary port, not counted as throughput) —
+       tagged per phase so the panel can show download-load vs upload-load */
     let loadedTimer = null;
     if (opts.loaded) {
+      const tag = kind === 'down' ? 'dl' : 'ul';
       loadedTimer = setInterval(async () => {
         if (signal.aborted) return;
         try {
           const ms = await this.#probe(signal, 2600);
-          if (!signal.aborted) { res.loaded.samples.push(ms); this.h.loadedSample?.(ms); }
+          if (!signal.aborted) { res.loaded.samples.push(ms); res.loaded[tag].push(ms); this.h.loadedSample?.(ms); }
         } catch { /* probe lost */ }
       }, 900);
     }

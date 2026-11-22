@@ -28,6 +28,7 @@ export class Gauge {
     this.display = 0;             // smoothed fraction 0..1
     this.target = 0;              // target fraction 0..1
     this.showNeedle = false;
+    this.breathing = false;       // idle: gentle arc pulse so the dial feels alive
     this.reduced = matchMedia('(prefers-reduced-motion: reduce)').matches;
     this.#build();
   }
@@ -72,8 +73,9 @@ export class Gauge {
       const [lx, ly] = pt(R + 32, a);
       const label = el('text', {
         x: lx, y: ly, 'text-anchor': 'middle', 'dominant-baseline': 'middle',
-        fill: 'var(--tick-label)', 'font-size': '14',
-        'font-family': "'IBM Plex Mono', monospace",
+        fill: 'var(--tick-label)', 'font-size': '14.5',
+        'font-family': "'Cairo', ui-monospace, monospace",
+        'font-weight': '700',
       }, tickG);
       label.textContent = String(SEGS[i]);
       /* minor ticks (4 per segment) */
@@ -118,13 +120,15 @@ export class Gauge {
   }
 
   /* drive by speed value (Mbps) */
-  setValue(mbps) { this.mode = 'value'; this.target = this.fracOf(mbps); this.#needle(true); }
+  setValue(mbps) { this.mode = 'value'; this.breathing = false; this.target = this.fracOf(mbps); this.#needle(true); }
 
-  /* rest state: everything dim — the start button owns the pre-start screen */
+  /* rest state: dim with a slow breathing arc — the start button owns the
+     pre-start screen, the dial itself stays quietly alive */
   restIdle() {
     this.mode = 'value';
     this.display = this.target = 0;
     this.showNeedle = false;
+    this.breathing = !this.reduced;
     this.needle.setAttribute('opacity', '0');
     this.dot.setAttribute('opacity', '0');
   }
@@ -132,6 +136,7 @@ export class Gauge {
   /* drive by progress 0..1 (latency phase) */
   setProgress(f) {
     this.mode = 'progress';
+    this.breathing = false;
     this.target = Math.max(0, Math.min(1, f));
     this.needle.setAttribute('opacity', '0');
     this.showNeedle = false;
@@ -146,9 +151,13 @@ export class Gauge {
 
   /* call every frame; now = performance.now() */
   tick(now, dtMs) {
-    const k = this.reduced ? 1 : 1 - Math.exp(-dtMs / 190);
+    /* idle breathing — a soft arc pulsing around the low end of the dial */
+    if (this.breathing) {
+      this.target = 0.085 + 0.075 * (0.5 + 0.5 * Math.sin(now / 1700));
+    }
+    const k = this.reduced ? 1 : 1 - Math.exp(-dtMs / (this.breathing ? 900 : 190));
     this.display += (this.target - this.display) * k;
-    if (Math.abs(this.target - this.display) < 0.0004) this.display = this.target;
+    if (!this.breathing && Math.abs(this.target - this.display) < 0.0004) this.display = this.target;
 
     const frac = this.display;
     const a = A0 + SWEEP * frac;
@@ -161,6 +170,7 @@ export class Gauge {
     } else {
       this.arc.setAttribute('visibility', 'visible');
       this.arc.setAttribute('stroke-dasharray', `${len} ${this.arcLen + 10}`);
+      this.arc.setAttribute('opacity', this.breathing ? '0.4' : '1');
     }
 
     /* needle + tip dot */
@@ -168,7 +178,7 @@ export class Gauge {
     const [dx, dy] = pt(R, a);
     this.dot.setAttribute('cx', dx);
     this.dot.setAttribute('cy', dy);
-    this.dot.setAttribute('opacity', frac > 0.004 || this.showNeedle ? '1' : '0');
+    this.dot.setAttribute('opacity', (frac > 0.004 || this.showNeedle) && !this.breathing ? '1' : '0');
 
     return frac;
   }

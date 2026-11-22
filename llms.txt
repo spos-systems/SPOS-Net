@@ -1,26 +1,42 @@
 # SPOS Net
 
-> SPOS Net is a free, open-source internet speed test that measures download speed, upload speed, latency (idle and under load), jitter and estimated packet loss — with a live speed graph, a bufferbloat grade (A+…F), professional options, result sharing and export.
+> SPOS Net is a free, open-source internet speed test built for Libya and the Arab world (Arabic-first, full RTL) that measures download speed, upload speed, latency (idle, under download load and under upload load), jitter, estimated packet loss and a bufferbloat grade (A+…F) — with a live speed graph, connection info (IP, ISP/ASN, server, protocol), a 0–100 connection score, usage-suitability badges, a local test history with chart and CSV export, result sharing and export.
 
-URL: https://spos-systems.github.io/SPOS-Net/
+URL: https://net.spos.ly/
 Language: Arabic (RTL) and English — follows the browser language on first visit
 Developer: SPOS — صولة للأنظمة (https://spos.ly)
 License: MIT
+
+## Company
+
+- Name: صولة للأنظمة — SPOS (SPOS Systems)
+- Website: https://spos.ly
+- Phone: +218 93 553 5606
+- WhatsApp: https://wa.me/218935535606
+- Tagline: حلول برمجية متكاملة — من الفكرة إلى الإطلاق (Integrated software solutions — from idea to launch)
+- SPOS Net is developed and maintained by SPOS as a free public tool.
 
 ## Metrics
 
 - Download speed: parallel streams spread across up to 9 independent TCP connections — Cloudflare speed endpoints on multiple HTTPS ports (443/2053/2083/2087/2096/8443) plus a 16 MB incompressible test file served from the site's own origin (GitHub Pages/Fastly), jsDelivr and raw.githubusercontent mirrors, so the line stays fully saturated even when an ISP filters the alternate ports.
 - Upload speed: parallel XHR POST streams with real-time upload progress — bytes are counted the moment they hit the wire; adaptive chunk size; same ramp exclusion and windowing.
 - Final figure (download & upload): Speedtest.net's documented methodology — instantaneous samples over the stable window are sorted, the two fastest are removed and the slowest ~22% are discarded; the mean of the remainder is reported. Sustained average and best 500 ms peak are also shown in the details.
-- Result sharing: share as an image card in three formats — square 1:1, portrait 9:16 and wide 16:9 — straight into the phone's share sheet (Web Share API files) with a live preview; copy a result link (results encoded in the URL — nothing stored server-side), save PNG, export JSON, WhatsApp / X / Telegram / native share.
-- Every result gets a short Result ID (e.g. SP-4F9K2Q1) shown in the details drawer and on the shared image card.
-- Real-world estimates: time to download a 1 GB file, a 10 GB game, a 7 GB 4K movie and to upload 500 MB of photos, computed from the measured speeds.
 - Latency (ping): time-to-first-byte of empty requests; min / median / average / max reported.
+- Latency under load: separate averages while downloading and while uploading, plus an A+…F bufferbloat grade — shown in the post-test connection panel.
 - Jitter: mean absolute difference between consecutive latency samples.
 - Estimated packet loss: failure rate of a burst of short timed requests (HTTP-level estimate).
-- Latency under load: latency samples taken while the line is saturated, graded A+…F as a bufferbloat indicator.
+- Connection panel (after the test): IP address (masked by default, reveal on tap), ISP, ASN, Cloudflare test server (colo), HTTP protocol, network type (from the Network Information API when available).
 - Live speed graph: instant download/upload speed plotted in real time during the test.
 - Download consistency: average-to-peak ratio, an indicator of line stability.
+- Real-world estimates: time to download a 1 GB file, a 10 GB game, a 7 GB 4K movie and to upload 500 MB of photos.
+- Every result gets a short Result ID (e.g. SP-4F9K2Q1).
+- Connection score (0–100) with usage-suitability badges (4K streaming, HD streaming, HD video calls, competitive gaming, casual gaming, large downloads) and a one-line verdict.
+- Local test history: the last 20 runs are saved in the browser only (never sent to any server), shown on the main page with a trend chart, best-speed summary and CSV export.
+
+## Sharing
+
+- Share as an image card in three formats — square 1:1, portrait 9:16 and wide 16:9 — straight into the phone's share sheet (Web Share API files) with a live preview. Cards are rendered with proper Arabic shaping and direction-safe text runs.
+- Copy a result link (results encoded in the URL — nothing stored server-side), save PNG, export JSON, WhatsApp / X / Telegram / native share.
 
 ## Professional options
 
@@ -28,21 +44,19 @@ License: MIT
 - Phase duration: 8 / 12 / 20 seconds.
 - Parallel streams: 1 / 4 / 8 / 16, automatically spread across all independent connections (Cloudflare ports + static mirrors).
 - Toggles: latency-under-load sampling, packet-loss burst.
-- Connection details: IP, ASN / ISP, city, Cloudflare colo, HTTP protocol, measurement method (streams × TCP connections).
-- Connection score (0–100) with usage suitability badges (4K streaming, HD streaming, video calls, competitive gaming, casual gaming, large downloads) and a one-line verdict.
-- Local test history (last 20 runs, stored in the browser only).
 - Keyboard shortcuts: Space start/stop, S settings, D details.
-- URL parameters: `?lang=ar|en` opens a specific language; `?auto=1` starts the test automatically (kiosks/embeds). First visit follows the browser language automatically.
-- Installable PWA with a real offline app shell (service worker precaching), install button on supported browsers and an iOS “Add to Home Screen” guide on Safari.
+- URL parameters: `?lang=ar|en` opens a specific language; `?auto=1` starts the test automatically (kiosks/embeds).
+- Installable PWA with a real offline app shell (service worker precaching). The install button is always visible on phones: on Android/Chrome it triggers the native install prompt, and on iPhone/Safari it opens a step-by-step "Add to Home Screen" guide.
 
 ## How it works
 
 The site is fully static (zero dependencies, no build step) and performs all measurements from the visitor's browser. Download uses the public CORS-enabled Cloudflare speed endpoint (`speed.cloudflare.com/__down`) on HTTPS ports 443/2053/2083/2087/2096/8443 plus a self-hosted 16 MB incompressible test file (`/assets/testdata/spos-16mb.bin`) mirrored on jsDelivr and raw.githubusercontent — each host:port pair is a separate TCP connection. Upload POSTs to `speed.cloudflare.com/__up`. The final number uses Speedtest.net's documented trimmed-mean methodology (drop the two fastest samples, discard the slowest ~22%, average the rest). No accounts, no ads, no tracking, no server-side logging.
 
-Why results can differ between tools: as of v2.3 the final figure uses the same methodology as Speedtest.net, so readings should closely match. Small differences (±10%) between any two tools are normal; larger gaps usually come from path differences or momentary congestion.
+Why results can differ between tools: as of v3.0 the final figure uses the same methodology as Speedtest.net, so readings should closely match. Small differences (±10%) between any two tools are normal; larger gaps usually come from path differences or momentary congestion.
 
 ## Links
 
+- Live app: https://net.spos.ly/
 - Source: https://github.com/spos-systems/SPOS-Net
-- Live app: https://spos-systems.github.io/SPOS-Net/
 - Releases: https://github.com/spos-systems/SPOS-Net/releases
+- Developer: https://spos.ly

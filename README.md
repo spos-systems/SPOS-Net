@@ -6,7 +6,7 @@
 
 A complete professional measurement: download and upload speed, latency (idle and under load), jitter and estimated packet loss — with a live speed graph, a bufferbloat grade, advanced options, sharing and export.
 
-**الرابط / Live**: <https://spos-systems.github.io/SPOS-Net/>
+**الرابط / Live**: <https://net.spos.ly/> (نطاق فرعي من spos.ly — a subdomain of spos.ly)
 
 ---
 
@@ -25,14 +25,14 @@ A complete professional measurement: download and upload speed, latency (idle an
 | أزمنة واقعية | زمن تنزيل ملف 1GB / لعبة 10GB / فيلم 4K ورفع 500MB صور من سرعتك الفعلية |
 | خيارات احترافية | الوحدة، مدة المراحل (8/12/20 ث)، عدد التدفقات (1–16)، مفاتيح تفعيل |
 | المشاركة والتصدير | صورة نتيجة بثلاث صيغ (مربع 1:1 / طولي 9:16 / عريض 16:9) مع معاينة حية، رابط نتيجة، ملخص نصي، PNG، JSON، واتساب / X / تيليجرام، مشاركة نظامية |
-| معلومات الاتصال | IP، المزود/ASN، المدينة، نقطة Cloudflare، البروتوكول، منهجية القياس |
+| معلومات الاتصال | IP (مقنّع افتراضياً)، المزود/ASN، الخادم، البروتوكول، نوع الشبكة، الاستجابة أثناء التنزيل/الرفع — لوحة في الصفحة الرئيسية بعد الاختبار |
 | تقييم الاتصال | درجة 0–100 + خلاصة بشرية + ملاءمة الاستخدام (بث 4K، مكالمات، ألعاب…) |
-| سجل النتائج | آخر 20 اختباراً محلياً في المتصفح فقط |
+| سجل النتائج | آخر 20 اختباراً محلياً في المتصفح فقط — يظهر في الصفحة الرئيسية مع مخطط اتجاه وأفضل سرعة وتصدير CSV |
 | اختصارات ومعاملات | `Space` بدء/إيقاف · `S` الإعدادات · `D` التفاصيل · `?lang=ar\|en` · `?auto=1` بدء تلقائي |
-| PWA كامل | يعمل بلا اتصال بعد أول زيارة (service worker)، زر تثبيت، ودليل إضافة للشاشة الرئيسية على iOS |
+| PWA كامل | يعمل بلا اتصال بعد أول زيارة (service worker)، زر تثبيت دائم في الشريط العلوي مع دليل خطوات لكل منصة (أندرويد/iPhone/سطح المكتب) |
 | شعار الشركة | شعار SPOS في الترويسة والتذييل وبطاقة المشاركة |
 
-Zero dependencies · No build step · No ads · No tracking · MIT license
+خطوط عربية حديثة (Cairo + Tajawal) مضافة ذاتياً · Zero dependencies · No build step · No ads · No tracking · MIT license
 
 ## الصفحة | Screenshots
 
@@ -76,7 +76,7 @@ python3 -m http.server 8000
 ```
 index.html              الصفحة الوحيدة (شاشة واحدة)
 assets/css/style.css    نظام التصميم
-assets/css/fonts.css    خطوط ذاتية الاستضافة (IBM Plex)
+assets/css/fonts.css    خطوط ذاتية الاستضافة (Cairo + Tajawal)
 assets/js/engine.js     محرك القياس متعدد الاتصالات
 assets/js/gauge.js      العداد الدائري (SVG)
 assets/js/i18n.js       العربية / English

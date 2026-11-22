@@ -8,7 +8,7 @@
  *     RIPEstat, API calls) are never intercepted — they must hit the network.
  *   • Legacy caches are purged on activate.
  */
-const VERSION = 'sposnet-v2.3.0';
+const VERSION = 'sposnet-v3.0.0';
 
 const SHELL = [
   './',
