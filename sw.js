@@ -13,7 +13,7 @@
  *     APIs) are never intercepted.
  *   • All caches from older versions are purged on activate.
  */
-const VERSION = 'sposnet-v5.0.0';
+const VERSION = 'sposnet-v6.0.0';
 
 const SHELL = [
   './',

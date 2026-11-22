@@ -144,13 +144,14 @@ async function initMeta() {
 
 /* ── gauge + readout ─────────────────────────────────────── */
 
-/* each phase owns its gradient — download cyan→blue, upload violet→pink,
-   ping amber, done: the full brand sweep. The dial announces the phase. */
+/* each phase owns its needle gradient — download cyan→blue, upload a
+   pure violet family (no fuchsia), ping amber, done: cyan→blue.
+   The dial announces the phase; nothing ever swings pink. */
 const PHASE_COLORS = {
   ping: ['#fcd34d', '#f59e0b', '#fde68a'],
   download: ['#22d3ee', '#3b82f6', '#67e8f9'],
-  upload: ['#a78bfa', '#e879f9', '#c4b5fd'],
-  done: ['#22d3ee', '#818cf8', '#67e8f9'],
+  upload: ['#a78bfa', '#8b5cf6', '#c4b5fd'],
+  done: ['#22d3ee', '#3b82f6', '#67e8f9'],
 };
 
 function setPhasePill(ph) {
