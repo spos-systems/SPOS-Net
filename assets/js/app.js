@@ -8,7 +8,7 @@ const $ = (s, r = document) => r.querySelector(s);
 const $$ = (s, r = document) => [...r.querySelectorAll(s)];
 
 const SITE_URL = 'https://spos-systems.github.io/SPOS-Net/';
-const VERSION = '2.1.0';
+const VERSION = '2.2.0';
 
 const DEFAULTS = { lang: 'ar', unit: 'mbps', duration: 12, streams: 8, loaded: true, loss: true };
 
@@ -35,7 +35,7 @@ function loadHistory() {
   try { return JSON.parse(localStorage.getItem('sposnet.history') || '[]'); } catch { return []; }
 }
 function saveHistory(list) {
-  try { localStorage.setItem('sposnet.history', JSON.stringify(list.slice(0, 10))); } catch { /* ignore */ }
+  try { localStorage.setItem('sposnet.history', JSON.stringify(list.slice(0, 20))); } catch { /* ignore */ }
 }
 
 /* unit conversion: value in Mbps → display pieces */
@@ -50,17 +50,26 @@ function fmtSpeed(mbps) {
 }
 const fmtMs = (v) => (v == null ? '—' : v < 10 ? v.toFixed(1) : Math.round(v).toString());
 
+/* human duration for real-world estimates (seconds → "45 ث" / "3.2 د") */
+function fmtDur(sec) {
+  if (!isFinite(sec) || sec <= 0) return '—';
+  if (sec < 90) return `${Math.round(sec)} ${t('d.sec')}`;
+  const m = sec / 60;
+  if (m < 90) return `${m < 10 ? (Math.round(m * 10) / 10).toFixed(1) : Math.round(m)} ${t('d.min')}`;
+  return `${(sec / 3600).toFixed(1)} ${t('d.hr')}`;
+}
+
 function setState(mode) {
   state.mode = mode;
   html.dataset.state = mode;
 }
 
-function toast(msg) {
+function toast(msg, ms = 2600) {
   const el = $('#toast');
   el.textContent = msg;
   el.hidden = false;
   clearTimeout(toast._t);
-  toast._t = setTimeout(() => { el.hidden = true; }, 2600);
+  toast._t = setTimeout(() => { el.hidden = true; }, ms);
 }
 
 /* ── i18n rendering ──────────────────────────────────────── */
@@ -496,6 +505,12 @@ function renderDetails(r) {
   const meta = r.meta || {};
   const server = `Cloudflare${meta.colo ? ' · ' + meta.colo : ''}${meta.coloCity ? ' — ' + meta.coloCity : ''}`;
   const conn = [meta.ip, meta.org || (meta.asn ? 'AS' + meta.asn : '')].filter(Boolean).join(' · ');
+  const rid = (r.sharedCompact?.id) || r.id || resultId(compact(r));
+  const connInfo = r.streams
+    ? (L === 'ar'
+        ? `${r.streams} تدفق متوازٍ · ${r.portsUsed || 1} اتصالات TCP`
+        : `${r.streams} parallel streams · ${r.portsUsed || 1} TCP connections`)
+    : '—';
 
   const rows = [
     statRow(d.dlAvg, `${fmtSpeed(r.download.avg)} <small>${t(`u.${settings.unit}`)}</small>`),
@@ -517,6 +532,8 @@ function renderDetails(r) {
     statRow(d.proto, meta.proto || '—'),
     statRow(d.conn, conn || '—'),
     statRow(d.date, dateStr),
+    statRow(d.connCount, connInfo),
+    statRow(d.resultId, `<bdi>${rid}</bdi>`),
   ].join('');
 
   const capsHtml = caps.map((c) => `
@@ -555,17 +572,28 @@ function renderDetails(r) {
       <ul class="caps">${capsHtml}</ul>
     </div>
     <div>
+      <div class="d-sec-title" style="margin-bottom:8px">${d.realWorld}</div>
+      <div class="stat-rows">
+        ${statRow(d.file1gb, fmtDur(8192 / Math.max(r.download.avg, 0.01)))}
+        ${statRow(d.file10gb, fmtDur(81920 / Math.max(r.download.avg, 0.01)))}
+        ${statRow(d.film4k, fmtDur(57344 / Math.max(r.download.avg, 0.01)))}
+        ${statRow(d.album, fmtDur(4096 / Math.max(r.upload.avg, 0.01)))}
+      </div>
+    </div>
+    <div>
       <div class="d-sec-title" style="margin-bottom:4px">${d.history}</div>
       <div class="history">${histHtml}</div>
       ${hist.length ? `<button class="btn btn-ghost" id="btn-clearhist" style="margin-top:8px">${d.clearHistory}</button>` : ''}
     </div>
     <div class="drawer-actions">
       <button class="btn" id="d-share">${t('a.share')}</button>
+      <button class="btn btn-accent" id="d-img">${t('sh.img')}</button>
       <button class="btn" id="d-png">${t('sh.png')}</button>
       <button class="btn" id="d-json">${t('sh.json')}</button>
     </div>`;
 
   $('#d-share').onclick = () => { closeDrawers(); openShareMenu(); };
+  $('#d-img').onclick = () => { closeDrawers(); shareImage(); };
   $('#d-png').onclick = () => exportPng();
   $('#d-json').onclick = () => exportJson();
   const ch = $('#btn-clearhist');
@@ -599,18 +627,28 @@ function closeShareMenu() { $('#share-menu').hidden = true; }
 
 /* ── share / export ──────────────────────────────────────── */
 
+/* Ookla-style short result identifier, derived from the result itself */
+function resultId(c) {
+  let h = 0x811c9dc5;
+  const s = `sp|${c.ts}|${c.dl}|${c.ul}|${c.pg}|${c.jt}`;
+  for (let i = 0; i < s.length; i++) { h ^= s.charCodeAt(i); h = Math.imul(h, 0x01000193) >>> 0; }
+  return 'SP-' + h.toString(36).toUpperCase().padStart(7, '0').slice(0, 10);
+}
+
 function compact(r) {
-  return {
+  const c = {
     ts: r.ts, dl: +r.download.avg.toFixed(2), ul: +r.upload.avg.toFixed(2),
     pg: +r.ping.med.toFixed(1), jt: +r.ping.jitter.toFixed(1),
     ls: r.loss.pct == null ? null : +r.loss.pct.toFixed(1),
     sc: scoreOf(r).score,
     org: r.meta?.org || '', city: r.meta?.city || '', colo: r.meta?.colo || '', v: 2,
   };
+  c.id = r.id || resultId(c);
+  return c;
 }
 function expand(c) {
-  return {
-    ts: c.ts, meta: { org: c.org, city: c.city, colo: c.colo, proto: '' },
+  const r = {
+    ts: c.ts, id: c.id, meta: { org: c.org, city: c.city, colo: c.colo, proto: '' },
     ping: { med: c.pg, min: c.pg, avg: c.pg, max: c.pg, jitter: c.jt, samples: [] },
     loss: { pct: c.ls, sent: 0, lost: 0 },
     loaded: { samples: [] },
@@ -618,6 +656,7 @@ function expand(c) {
     upload: { avg: c.ul, peak: c.ul, bytes: 0, ms: 0 },
     sharedCompact: c,
   };
+  return r;
 }
 
 function resultLink(r) {
@@ -686,12 +725,20 @@ function exportJson() {
   downloadBlob(new Blob([JSON.stringify(out, null, 2)], { type: 'application/json' }), `sposnet-${new Date(r.ts).toISOString().slice(0, 10)}.json`);
 }
 
-async function exportPng() {
-  const r = state.result;
-  if (!r) return;
+function loadLogo() {
+  return new Promise((resolve) => {
+    const img = new Image();
+    img.onload = () => resolve(img);
+    img.onerror = () => resolve(null);
+    img.src = 'assets/img/logo.png';
+  });
+}
+
+async function buildCardBlob(r) {
   const c = r.sharedCompact || compact(r);
   const L = getLang();
   await document.fonts.ready;
+  const logo = await loadLogo();
 
   const W = 1200, H = 630, S = 2;
   const cv = document.createElement('canvas');
@@ -727,17 +774,22 @@ async function exportPng() {
   const tagline = RTL ? 'اختبار سرعة الإنترنت — نتيجة مشارَكة' : 'Internet speed test — shared result';
   put((X) => x.fillText(tagline, X, 104));
 
-  /* left mini logo arc (language-agnostic corner) */
-  const cx = RTL ? pad + 22 : W - pad - 22, cy = 84;
-  x.lineWidth = 5; x.lineCap = 'round';
-  const grad2 = x.createLinearGradient(cx - 20, 0, cx + 20, 0);
-  grad2.addColorStop(0, '#3d7fd6'); grad2.addColorStop(1, '#a48ffc');
-  x.strokeStyle = grad2;
-  x.beginPath(); x.arc(cx, cy, 19, Math.PI * 0.75, Math.PI * 2.25); x.stroke();
-  x.strokeStyle = '#e9edf5'; x.lineWidth = 4;
-  x.beginPath(); x.moveTo(cx - 5, cy + 12); x.lineTo(cx + 9, cy - 16); x.stroke();
-  x.fillStyle = '#e9edf5';
-  x.beginPath(); x.arc(cx, cy, 3.6, 0, 7); x.fill();
+  /* company logo (opposite corner of the wordmark) */
+  if (logo) {
+    const ls = 46, lx = RTL ? pad : W - pad - ls, ly = 62;
+    const r0 = 12;
+    x.save();
+    x.beginPath();
+    x.moveTo(lx + r0, ly);
+    x.arcTo(lx + ls, ly, lx + ls, ly + ls, r0);
+    x.arcTo(lx + ls, ly + ls, lx, ly + ls, r0);
+    x.arcTo(lx, ly + ls, lx, ly, r0);
+    x.arcTo(lx, ly, lx + ls, ly, r0);
+    x.closePath();
+    x.clip();
+    x.drawImage(logo, lx, ly, ls, ls);
+    x.restore();
+  }
 
   /* gauge */
   const gx = W / 2, gy = 350, gr = 150;
@@ -752,13 +804,10 @@ async function exportPng() {
   x.strokeStyle = grad;
   x.beginPath(); x.arc(gx, gy, gr, a0, a1); x.stroke();
 
-  /* needle */
-  const na = a0 + Math.PI * 1.5 * frac - Math.PI / 2;
-  x.strokeStyle = '#dfe6f2'; x.lineWidth = 5;
-  x.beginPath(); x.moveTo(gx, gy);
-  x.lineTo(gx + Math.cos(na) * (gr - 30), gy + Math.sin(na) * (gr - 30)); x.stroke();
-  x.fillStyle = '#141926'; x.strokeStyle = '#2a3347'; x.lineWidth = 2;
-  x.beginPath(); x.arc(gx, gy, 10, 0, 7); x.fill(); x.stroke();
+  /* value marker at the arc end (no center needle — keeps the big number clean) */
+  const na = a0 + Math.PI * 1.5 * frac;
+  x.fillStyle = '#e9edf5';
+  x.beginPath(); x.arc(gx + Math.cos(na) * gr, gy + Math.sin(na) * gr, 7, 0, 7); x.fill();
 
   /* center value */
   x.textAlign = 'center';
@@ -768,6 +817,9 @@ async function exportPng() {
   x.fillStyle = '#9aa4b8';
   x.font = `500 20px ${SANS}`;
   x.fillText('Mbps  ·  ' + (RTL ? 'التنزيل' : 'Download'), gx, gy + 22);
+  x.fillStyle = '#7f8ba3';
+  x.font = `500 17px ${SANS}`;
+  x.fillText(`${t(`grade.${scoreOf(r).grade}`)} · ${c.sc}/100`, gx, gy + 52);
 
   /* metric tiles */
   const tiles = [
@@ -801,9 +853,34 @@ async function exportPng() {
   const ds = `${d.getDate()}/${d.getMonth() + 1}/${d.getFullYear()}`;
   x.fillText(`${ds}  ·  ${c.org || ''}`, RTL ? W - pad : pad, 606 - 82);
   x.textAlign = RTL ? 'left' : 'right';
-  x.fillText('spos-systems.github.io/SPOS-Net', RTL ? pad : W - pad, 524);
+  x.fillText(`${c.id ? c.id + '  ·  ' : ''}spos-systems.github.io/SPOS-Net`, RTL ? pad : W - pad, 524);
 
-  cv.toBlob((b) => downloadBlob(b, `sposnet-result-${c.ts}.png`), 'image/png');
+  return new Promise((resolve) => cv.toBlob(resolve, 'image/png'));
+}
+
+function exportPng() {
+  const r = state.result;
+  if (!r) return;
+  const c = r.sharedCompact || compact(r);
+  buildCardBlob(r).then((b) => { if (b) downloadBlob(b, `sposnet-${c.id || c.ts}.png`); });
+}
+
+/* share the rendered result card straight into the phone's share sheet */
+async function shareImage() {
+  const r = state.result;
+  if (!r) return;
+  const c = r.sharedCompact || compact(r);
+  try {
+    const blob = await buildCardBlob(r);
+    if (!blob) return;
+    const file = new File([blob], `sposnet-${c.id || c.ts}.png`, { type: 'image/png' });
+    if (navigator.canShare && navigator.canShare({ files: [file] })) {
+      await navigator.share({ files: [file], title: 'SPOS Net', text: shortText(r) });
+      return;
+    }
+    downloadBlob(blob, `sposnet-${c.id || c.ts}.png`);
+    toast(t('t.imgFallback'));
+  } catch { /* user dismissed the share sheet */ }
 }
 
 async function nativeShare(r) {
@@ -969,6 +1046,13 @@ function boot() {
   resetUI();
   $('#ver-tag').textContent = `SPOS Net v${VERSION}`;
 
+  /* PWA: register the service worker (offline app shell) */
+  if ('serviceWorker' in navigator) {
+    navigator.serviceWorker.register('sw.js').catch(() => {});
+  }
+  addEventListener('online', () => toast(t('t.online')));
+  addEventListener('offline', () => toast(t('t.offline')));
+
   /* single rAF loop for the gauge */
   let last = performance.now();
   const loop = (now) => {
@@ -1002,6 +1086,7 @@ function boot() {
     if (!e.target.closest('.menu-anchor')) closeShareMenu();
   });
   $('#mi-link').addEventListener('click', () => { closeShareMenu(); if (state.result) copyText(resultLink(state.result)); });
+  $('#mi-img').addEventListener('click', () => { closeShareMenu(); shareImage(); });
   $('#mi-text').addEventListener('click', () => { closeShareMenu(); if (state.result) copyText(summaryText(state.result)); });
   $('#mi-png').addEventListener('click', () => { closeShareMenu(); exportPng(); });
   $('#mi-json').addEventListener('click', () => { closeShareMenu(); exportJson(); });
@@ -1027,13 +1112,20 @@ function boot() {
 
   /* PWA install */
   let installEvt = null;
+  const isIOS = /iphone|ipad|ipod/i.test(navigator.userAgent)
+    || (navigator.platform === 'MacIntel' && navigator.maxTouchPoints > 1);
+  const isStandalone = matchMedia('(display-mode: standalone)').matches || navigator.standalone === true;
+  if (isIOS && !isStandalone) $('#btn-install').hidden = false;
   window.addEventListener('beforeinstallprompt', (e) => {
     e.preventDefault();
     installEvt = e;
     $('#btn-install').hidden = false;
   });
   $('#btn-install').addEventListener('click', async () => {
-    if (!installEvt) return;
+    if (!installEvt) {
+      if (isIOS) toast(t('t.iosInstall'), 5600);   /* Safari: Share → Add to Home Screen */
+      return;
+    }
     installEvt.prompt();
     await installEvt.userChoice.catch(() => {});
     installEvt = null;

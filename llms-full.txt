@@ -4,8 +4,8 @@ SPOS Net (https://spos-systems.github.io/SPOS-Net/) is a free and open-source in
 
 ## What it measures
 
-1. **Download speed (Mbps)** — Measured with parallel HTTP GET streams downloading large payloads from the nearest Cloudflare edge location (anycast). The initial acceleration ramp (at least 1.2 s or 22% of the phase, whichever is larger) is excluded from the final figure; the reported average covers the stable window, and a peak (best 500 ms window) is also reported. Live values use a rolling 1-second window.
-2. **Upload speed (Mbps)** — Measured with parallel HTTP POST streams of random bytes. Chunk size adapts to the observed round-trip speed (256 KiB – 16 MiB) so both slow and fast lines produce smooth, accurate samples. Same ramp exclusion and windowing as download.
+1. **Download speed (Mbps)** — Measured with parallel HTTP GET streams downloading large payloads (25 MiB chunks) from the nearest Cloudflare edge location (anycast). Streams are spread across up to 6 independent TCP connections using multiple HTTPS ports (443, 2053, 2083, 2087, 2096, 8443 — each port is a separate origin for the browser's connection pool), mirroring the multi-connection approach of leading test apps so a single congested connection cannot cap the result. The measurement clock starts at the first received byte; the TCP ramp-up window (at least 1.1 s or 16% of the phase) is excluded; the reported average covers the stable window, and a peak (best 500 ms window) is also reported. Live values use a rolling 1-second window.
+2. **Upload speed (Mbps)** — Measured with parallel XHR POST streams of random bytes carrying real-time `upload.onprogress` events, so bytes are counted the moment they are sent rather than when a request completes. Chunk size adapts to the observed speed (512 KiB – 16 MiB, starting at 4 MiB). Connections are warmed during the latency phase and spread across up to 4 ports; in-flight requests are aborted exactly at the deadline. Same ramp exclusion and windowing as download.
 3. **Latency / ping (ms)** — Time-to-first-byte of empty (0-byte) requests, after a warm-up request. Twelve samples produce min, median, average and max. The median is shown as the headline ping.
 4. **Jitter (ms)** — Mean absolute difference between consecutive latency samples (RFC 3550-style inter-arrival variation, applied to HTTP RTT).
 5. **Estimated packet loss (%)** — A burst of 24 short timed requests (concurrency 6, timeout 2.8 s); the share of failed/timed-out requests approximates loss at the HTTP level. This is an estimate: browsers cannot emit ICMP, and TCP retransmissions are invisible to JavaScript.
@@ -17,15 +17,17 @@ SPOS Net (https://spos-systems.github.io/SPOS-Net/) is a free and open-source in
 
 - Display unit: Mbps (default), MB/s, or kbps — applies to gauge, tiles and exports.
 - Phase duration: 8 s (quick), 12 s (standard), 20 s (thorough) for download and upload.
-- Parallel connections: 1, 4, 8 (default) or 16 concurrent streams.
+- Parallel streams: 1, 4, 8 (default) or 16 concurrent streams, automatically spread across up to 6 independent TCP connections.
 - Toggles: latency-under-load sampling, packet-loss burst test.
-- Share: copy a result link (result encoded in the URL fragment — nothing is stored server-side), copy a text summary, save a 1200×630 PNG result card, export JSON, share via WhatsApp / X / Telegram, or use the native OS share sheet where available.
-- Connection details: public IP, ASN and ISP name, city/country, Cloudflare colo serving the test, HTTP protocol version.
+- Share: share as an image card straight into the phone's share sheet (Web Share API Level 2 file sharing, with PNG download fallback), copy a result link (result encoded in the URL fragment — nothing is stored server-side), copy a text summary, save a 1200×630 PNG result card, export JSON, share via WhatsApp / X / Telegram, or use the native OS share sheet where available.
+- Result ID: every run gets a short identifier (e.g. SP-4F9K2Q1) derived from the result itself, shown in the details drawer, on the image card and in shared links.
+- Real-world estimates: time to download a 1 GB file, a 10 GB game and a 7 GB 4K movie, and to upload 500 MB of photos — computed from the measured speeds.
+- Connection details: public IP, ASN and ISP name, city/country, Cloudflare colo serving the test, HTTP protocol version, and the measurement method (streams × TCP connections).
 - Connection score: 0–100 weighted score (download 42%, upload 23%, ping 20%, jitter 8%, loss 7%) with a grade, a one-line verdict and usage-suitability badges: 4K streaming (≥25 Mbps), HD streaming (≥5 Mbps), HD video calls, competitive gaming (ping ≤60 ms, jitter ≤15 ms, loss <1%), casual gaming (ping ≤120 ms), large downloads (≥100 Mbps). Ping, jitter and loss tiles are tinted green/amber/red by quality thresholds after each run.
-- Test history: last 10 runs kept in the browser's localStorage only.
+- Test history: last 20 runs kept in the browser's localStorage only.
 - Keyboard shortcuts: Space (start/stop), S (settings), D (details).
 - URL parameters: `?lang=ar|en` forces a language; `?auto=1` starts the test automatically on load (useful for kiosks and embeds). On first visit the app follows the browser language automatically.
-- Installable PWA with an install button when the browser exposes `beforeinstallprompt`.
+- Installable PWA: the service worker precaches the app shell (HTML, CSS, JS, icons, logo) so the app opens instantly and works offline after the first visit; the install button appears when the browser exposes `beforeinstallprompt`, and iOS Safari users get an “Add to Home Screen” guide.
 
 ## Privacy and architecture
 
@@ -36,7 +38,8 @@ SPOS Net (https://spos-systems.github.io/SPOS-Net/) is a free and open-source in
 
 ## Common questions
 
-- **Is it accurate?** Browser-based tests measure HTTP throughput, the same class of measurement as other web speed tests (Cloudflare, Fast.com). Multi-connection mode approximates real-world multi-stream usage; single-connection mode approximates one large file download.
+- **Is it accurate?** Browser-based tests measure HTTP throughput, the same class of measurement as other web speed tests (Cloudflare, Fast.com). SPOS Net spreads streams across up to 6 independent TCP connections — the same multi-connection model used by leading desktop test apps — so a lossy or long path cannot cap the result at a single connection's congestion window. Single-stream mode approximates one large file download.
+- **Why do different apps show different numbers?** Servers and paths differ: an ISP-local test server gives a shorter path and higher numbers, while a global anycast edge measures a realistic end-to-end path. Small differences (±10%) between any two tools are normal; large gaps usually mean one tool tests a shorter path or uses a different ramp-up/averaging method.
 - **Why Cloudflare endpoints?** They are the only public, CORS-enabled, upload-capable measurement endpoints suitable for a dependency-free static site, and anycast routing automatically selects the nearest edge.
 - **Why is packet loss "estimated"?** Browsers cannot send ICMP packets; the HTTP failure-rate burst is the closest observable proxy.
 - **Cost?** Free, no ads, open source under MIT.

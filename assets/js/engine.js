@@ -1,20 +1,33 @@
 /* SPOS Net — measurement engine (zero dependencies)
  *
  * Backend: public Cloudflare speed endpoints (CORS-enabled, anycast):
- *   GET  https://speed.cloudflare.com/__down?bytes=N
- *   POST https://speed.cloudflare.com/__up
+ *   GET  https://speed.cloudflare.com[__down]?bytes=N
+ *   POST https://speed.cloudflare.com[__up]
  *   GET  https://speed.cloudflare.com/meta
- * Fallback for meta: exposed cf-meta-* headers on __down responses.
  *
- * Phases: idle latency → (loss burst) → download → upload.
- * Throughput: parallel streams, rolling 1 s window for live display,
- * ramp-up excluded, stable-window average for the final figure.
+ * Accuracy model (v2.2 — multi-connection, same approach as leading test apps):
+ *   Browsers multiplex same-origin requests over ONE HTTP/2 connection, so all
+ *   streams share a single TCP congestion window — on long or lossy paths that
+ *   caps throughput far below the line's real capacity. Cloudflare also serves
+ *   the same endpoints on alternate HTTPS ports (2053/2083/2087/2096/8443).
+ *   Each (host, port) pair is a separate origin for the browser's connection
+ *   pool, so spreading streams across ports gives us up to 6 independent TCP
+ *   connections — like opening several connections to a test server.
+ *
+ *   Download: parallel fetch readers (byte-accurate streaming), 25 MiB chunks.
+ *   Upload: parallel XHRs with upload.onprogress — bytes are counted the
+ *   moment they hit the wire, not when the request completes.
+ *   Both phases: clock starts at the FIRST byte, ramp-up excluded, sustained
+ *   average over the stable window, best 500 ms window as peak.
+ *   Connections are warmed (TLS) during the latency phase.
  */
 
 const BASE = 'https://speed.cloudflare.com';
+const PORTS = [443, 2053, 2083, 2087, 2096, 8443];
+const PORT_TIMEOUT = 3200;
 
 const PING_SAMPLES = 12;
-const PING_GAP_MS = 170;
+const PING_GAP_MS = 150;
 const PING_TIMEOUT = 3500;
 
 const LOSS_PROBES = 24;
@@ -22,12 +35,13 @@ const LOSS_CONCURRENCY = 6;
 const LOSS_TIMEOUT = 2800;
 
 const DL_CHUNK = 26214400;              // 25 MiB per request
-const UL_START = 1 << 20;               // 1 MiB, adaptive
-const UL_MAX = 1 << 24;                 // 16 MiB
-const UL_MIN = 1 << 18;                 // 256 KiB
+const UL_START = 4 << 20;               // 4 MiB, adaptive
+const UL_MAX = 16 << 20;                // 16 MiB
+const UL_MIN = 512 << 10;               // 512 KiB
+const UL_PORT_SPAN = 4;                 // upload streams spread across ≤ 4 ports
 
-const RAMP_SKIP_RATIO = 0.22;           // fraction of the phase excluded from the average
-const RAMP_SKIP_MIN_MS = 1200;
+const RAMP_MIN_MS = 1100;               // excluded after first byte
+const RAMP_RATIO = 0.16;                // …or 16% of phase, whichever is larger
 
 const sleep = (ms) => new Promise((r) => setTimeout(r, ms));
 const median = (arr) => {
@@ -42,13 +56,20 @@ export class Engine {
     this.ctrl = null;
     this.running = false;
     this._payload = null;
+    this._xhrs = new Set();
+    this.ports = [443];
   }
 
-  stop() { if (this.ctrl) this.ctrl.abort(); }
+  origin(port) { return port === 443 ? BASE : `${BASE}:${port}`; }
+
+  stop() {
+    if (this.ctrl) this.ctrl.abort();
+    for (const x of this._xhrs) { try { x.abort(); } catch { /* noop */ } }
+    this._xhrs.clear();
+  }
 
   /* ── connection meta ─────────────────────────────────────── */
   async fetchMeta(signal) {
-    /* primary: /meta (browser fetch sends Referer → full JSON) */
     try {
       const r = await fetch(`${BASE}/meta`, { cache: 'no-store', signal });
       if (r.ok) {
@@ -63,8 +84,6 @@ export class Engine {
         }
       }
     } catch { /* fall through */ }
-
-    /* fallback: cf-meta-* headers of a tiny download */
     try {
       const r = await fetch(`${BASE}/__down?bytes=0&r=${Math.random()}`, { cache: 'no-store', signal });
       const h = (k) => r.headers.get(k) || '';
@@ -79,7 +98,6 @@ export class Engine {
     return null;
   }
 
-  /* optional: resolve ASN organization name (RIPEstat, CORS-enabled) */
   async fetchAsnName(asn) {
     if (!asn) return '';
     try {
@@ -105,6 +123,32 @@ export class Engine {
     }
   }
 
+  /* ── port health check + connection warm-up ────────────────
+   * Fired in parallel with the latency phase: opens one tiny request per
+   * port. Working ports (DNS + TCP + TLS OK) are kept; failing ones fall
+   * back to 443. The connections stay warm for the download phase. */
+  async #preparePorts(signal) {
+    const check = async (port) => {
+      try {
+        const c = new AbortController();
+        const t = setTimeout(() => c.abort(), PORT_TIMEOUT);
+        const relay = () => c.abort();
+        signal.addEventListener('abort', relay, { once: true });
+        try {
+          await fetch(`${this.origin(port)}/__down?bytes=1&r=${Math.random()}`, { cache: 'no-store', signal: c.signal });
+          return signal.aborted ? null : port;
+        } finally {
+          clearTimeout(t);
+          signal.removeEventListener('abort', relay);
+        }
+      } catch { return null; }
+    };
+    const ok = (await Promise.all(PORTS.map(check))).filter(Boolean);
+    /* keep 443 first so latency probes & fallbacks always use the primary */
+    this.ports = ok.length ? [...new Set([443, ...ok.filter((p) => p !== 443)])] : [443];
+    return this.ports.length;
+  }
+
   /* ── run the full test ───────────────────────────────────── */
   async run(opts) {
     if (this.running) return;
@@ -122,11 +166,14 @@ export class Engine {
       loaded: { samples: [], avg: null, max: null },
       download: { avg: 0, peak: 0, bytes: 0, ms: 0 },
       upload: { avg: 0, peak: 0, bytes: 0, ms: 0 },
+      streams: Math.max(1, opts.streams | 0),
+      portsUsed: 1,
     };
 
     try {
-      /* 1 ── idle latency */
+      /* 1 ── idle latency + (concurrent) port warm-up */
       this.h.phase?.('ping');
+      const portsReady = this.#preparePorts(signal);
       const warm = await this.#probe(signal, 4500).catch(() => null);
       if (aborted()) return this.#abort();
       const samples = res.ping.samples;
@@ -151,6 +198,9 @@ export class Engine {
       p.jitter = jSum / (samples.length - 1);
       this.h.pingDone?.(p);
 
+      res.portsUsed = await portsReady;
+      if (aborted()) return this.#abort();
+
       /* 2 ── loss burst (estimated) */
       if (opts.loss) {
         await this.#lossBurst(res, signal);
@@ -173,7 +223,6 @@ export class Engine {
       this.h.uploadDone?.(res.upload);
 
       this.h.phase?.('done');
-      /* aggregate loaded-latency stats (bufferbloat input) */
       if (res.loaded.samples.length) {
         const s = res.loaded.samples;
         res.loaded.avg = s.reduce((a, b) => a + b, 0) / s.length;
@@ -199,6 +248,7 @@ export class Engine {
         sent++;
         try { await this.#probe(signal, LOSS_TIMEOUT); }
         catch { if (signal.aborted) return; lost++; }
+        void i;
       }
     };
     await Promise.all(Array.from({ length: LOSS_CONCURRENCY }, worker));
@@ -209,21 +259,30 @@ export class Engine {
   async #throughput(kind, signal, opts, res) {
     const durationMs = opts.duration * 1000;
     const streams = Math.max(1, opts.streams | 0);
+
+    /* origin spread: one connection per (host, port); extra streams share them */
+    const ports = kind === 'up'
+      ? this.ports.slice(0, Math.min(UL_PORT_SPAN, this.ports.length))
+      : this.ports;
+    res.streams = streams;
+    res.portsUsed = Math.max(res.portsUsed || 1, kind === 'up' ? ports.length : Math.min(streams, ports.length));
+    if (kind === 'down') res.dlConnections = Math.min(streams, ports.length);
+
     const started = performance.now();
-    const st = { bytes: 0, timeline: [[started, 0]], errors: 0 };
+    const st = { bytes: 0, firstAt: 0, timeline: [[started, 0]] };
     const inner = new AbortController();
-    const relay = () => inner.abort();
+    const relay = () => { inner.abort(); this.stop(); };
     signal.addEventListener('abort', relay, { once: true });
 
-    /* live sampler — rolling 1 s window */
+    /* live sampler — rolling 1 s window for the gauge/graph */
     const sampler = setInterval(() => {
       const now = performance.now();
       st.timeline.push([now, st.bytes]);
       const w = windowSpeed(st.timeline, 1000);
-      if (w != null) this.h.sample?.(kind, w, (st.bytes * 8) / 1e6 / ((now - started) / 1000));
+      if (w != null) this.h.sample?.(kind, w, (st.bytes * 8) / 1e6 / ((now - (st.firstAt || started)) / 1000));
     }, 90);
 
-    /* loaded-latency probes */
+    /* loaded-latency probes (primary port, not counted as throughput) */
     let loadedTimer = null;
     if (opts.loaded) {
       loadedTimer = setInterval(async () => {
@@ -235,29 +294,53 @@ export class Engine {
       }, 900);
     }
 
+    /* deadline watchdog: aborts in-flight upload XHRs exactly on time */
+    let watchdog = null;
     const deadline = started + durationMs;
-    const workers = Array.from({ length: streams }, () =>
-      kind === 'down' ? this.#dlWorker(st, inner.signal, deadline) : this.#ulWorker(st, inner.signal, deadline),
+
+    const workers = Array.from({ length: streams }, (_, i) =>
+      kind === 'down'
+        ? this.#dlWorker(st, ports, i, inner.signal, deadline)
+        : this.#ulWorker(st, ports, i, inner.signal, deadline),
     );
+
+    if (kind === 'up') {
+      watchdog = setInterval(() => {
+        if (performance.now() >= deadline) {
+          clearInterval(watchdog);
+          for (const x of this._xhrs) { try { x.abort(); } catch { /* noop */ } }
+          this._xhrs.clear();
+        }
+      }, 60);
+    }
+
     await Promise.allSettled(workers);
 
     clearInterval(sampler);
     if (loadedTimer) clearInterval(loadedTimer);
+    if (watchdog) clearInterval(watchdog);
     signal.removeEventListener('abort', relay);
     st.timeline.push([performance.now(), st.bytes]);
 
-    const out = { avg: 0, peak: 0, bytes: st.bytes, ms: 0 };
-    const end = st.timeline[st.timeline.length - 1];
-    out.ms = end[0] - started;
+    const out = this.#settle(st, started, durationMs);
+    if (!(out.avg > 0)) throw new Error('NO_DATA');
+    return out;
+  }
 
+  /* final figures from the timeline: sustained avg (ramp excluded) + peak */
+  #settle(st, started, durationMs) {
+    const end = st.timeline[st.timeline.length - 1];
+    const out = { avg: 0, peak: 0, bytes: st.bytes, ms: end[0] - started };
     if (st.bytes === 0) throw new Error('NO_DATA');
 
-    /* exclude ramp-up */
-    const skipTo = started + Math.max(RAMP_SKIP_MIN_MS, durationMs * RAMP_SKIP_RATIO);
-    let a = st.timeline[0];
-    for (const p of st.timeline) { if (p[0] >= skipTo) { a = p; break; } }
-    if (end[0] - a[0] < 600) a = st.timeline[0];      // very short run — use everything
-    out.avg = ((end[1] - a[1]) * 8) / 1e6 / ((end[0] - a[0]) / 1000);
+    const base = st.firstAt || started;                    /* clock: first byte */
+    const skipTo = base + Math.max(RAMP_MIN_MS, durationMs * RAMP_RATIO);
+    let a = st.timeline.find((p) => p[0] >= skipTo)
+      || st.timeline.find((p) => p[0] >= base)
+      || st.timeline[0];
+    if (end[0] - a[0] < 500) a = st.timeline[0];           /* very short run */
+    out.avg = ((end[1] - a[1]) * 8) / 1e6 / Math.max((end[0] - a[0]) / 1000, 0.05);
+    if (!(out.avg > 0) || !isFinite(out.avg)) out.avg = (st.bytes * 8) / 1e6 / Math.max(out.ms / 1000, 0.05);
 
     /* peak = best 500 ms window */
     let peak = 0;
@@ -271,63 +354,90 @@ export class Engine {
       }
     }
     out.peak = Math.max(peak, out.avg);
-
-    if (!(out.avg > 0)) throw new Error('NO_DATA');
     return out;
   }
 
-  async #dlWorker(st, signal, deadline) {
+  /* ── download stream: byte-accurate streaming reads ─────── */
+  async #dlWorker(st, ports, i, signal, deadline) {
+    const base = this.origin(ports[i % ports.length]);
     let misses = 0;
     while (!signal.aborted && performance.now() < deadline) {
       try {
-        const r = await fetch(`${BASE}/__down?bytes=${DL_CHUNK}&r=${Math.random()}`, {
+        const r = await fetch(`${base}/__down?bytes=${DL_CHUNK}&r=${Math.random()}`, {
           cache: 'no-store', signal,
         });
         const reader = r.body.getReader();
         for (;;) {
           const { done, value } = await reader.read();
           if (done) break;
+          if (!st.firstAt) st.firstAt = performance.now();
           st.bytes += value.byteLength;
-          if (signal.aborted) { try { reader.cancel(); } catch {} return; }
         }
         misses = 0;
       } catch {
         if (signal.aborted) return;
-        if (++misses > 4) return;                      // give this stream up
-        await sleep(160);
+        if (++misses > 4) return;                          /* give this stream up */
+        await sleep(200);
       }
     }
   }
 
+  /* ── upload payload (random, reusable) ───────────────────── */
   #payload() {
     if (this._payload) return this._payload;
-    const n = UL_MAX;
-    const a = new Uint8Array(n);
-    for (let o = 0; o < n; o += 65536) {
-      crypto.getRandomValues(a.subarray(o, Math.min(o + 65536, n)));
+    const a = new Uint8Array(UL_MAX);
+    for (let o = 0; o < UL_MAX; o += 65536) {
+      crypto.getRandomValues(a.subarray(o, Math.min(o + 65536, UL_MAX)));
     }
     return (this._payload = a);
   }
 
-  async #ulWorker(st, signal, deadline) {
-    const payload = this.#payload();
+  /* ── upload stream: XHR + upload.onprogress (bytes counted
+   *     as they leave the wire, not on completion) ─────────── */
+  #ulRequest(st, port, size) {
+    return new Promise((resolve) => {
+      const xhr = new XMLHttpRequest();
+      let last = 0;
+      const onProg = (e) => {
+        const d = e.loaded - last;
+        last = e.loaded;
+        if (d > 0) {
+          if (!st.firstAt) st.firstAt = performance.now();
+          st.bytes += d;
+        }
+      };
+      xhr.upload.addEventListener('progress', onProg);
+      xhr.addEventListener('loadend', () => {
+        this._xhrs.delete(xhr);
+        resolve();
+      });
+      this._xhrs.add(xhr);
+      xhr.open('POST', `${this.origin(port)}/__up?r=${Math.random()}`, true);
+      try {
+        xhr.send(new Blob([this.#payload().subarray(0, size)]));
+      } catch { /* sync send failure — settle quietly */
+        this._xhrs.delete(xhr);
+        resolve();
+      }
+    });
+  }
+
+  async #ulWorker(st, ports, i, signal, deadline) {
+    const port = ports[i % ports.length];
     let size = UL_START, misses = 0;
     while (!signal.aborted && performance.now() < deadline) {
+      const t0 = performance.now();
       try {
-        const body = new Blob([payload.subarray(0, size)]);
-        const t0 = performance.now();
-        await fetch(`${BASE}/__up?r=${Math.random()}`, { method: 'POST', body, cache: 'no-store', signal });
-        const dt = performance.now() - t0;
-        st.bytes += size;
-        if (dt < 1100) size = Math.min(size * 2, UL_MAX);       // adapt chunk size
-        else if (dt > 4200) size = Math.max(size >> 1, UL_MIN);
-        misses = 0;
+        await this.#ulRequest(st, port, size);
       } catch {
         if (signal.aborted) return;
-        if (++misses > 4) return;
+        if (++misses > 3) return;
         size = Math.max(size >> 1, UL_MIN);
-        await sleep(160);
+        continue;
       }
+      const dt = performance.now() - t0;
+      if (dt < 1200 && size < UL_MAX) size = Math.min(size * 2, UL_MAX);
+      else if (dt > 6000 && size > (1 << 20)) size = Math.max(size >> 1, 1 << 20);
     }
   }
 }

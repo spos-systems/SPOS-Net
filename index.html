@@ -39,6 +39,9 @@
   <link rel="icon" type="image/svg+xml" href="assets/img/favicon.svg">
   <link rel="icon" type="image/png" sizes="32x32" href="assets/img/favicon-32.png">
   <link rel="apple-touch-icon" href="assets/img/icon-180.png">
+  <meta name="apple-mobile-web-app-capable" content="yes">
+  <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
+  <meta name="apple-mobile-web-app-title" content="SPOS Net">
   <link rel="manifest" href="manifest.webmanifest">
   <link rel="stylesheet" href="assets/css/fonts.css">
   <link rel="stylesheet" href="assets/css/style.css">
@@ -53,11 +56,11 @@
     "applicationCategory": "UtilitiesApplication",
     "operatingSystem": "Any",
     "browserRequirements": "Requires JavaScript",
-    "softwareVersion": "2.1.0",
+    "softwareVersion": "2.2.0",
     "isAccessibleForFree": true,
     "inLanguage": ["ar", "en"],
     "description": "Free, open-source internet speed test: download, upload, latency (idle and under load), jitter, estimated packet loss and a bufferbloat grade — with a live speed graph, professional options, result sharing and export.",
-    "featureList": "Download speed, Upload speed, Latency (ping), Jitter, Estimated packet loss, Latency under load (bufferbloat grade), Live speed graph, Connection score, Result sharing (link, PNG, JSON, WhatsApp, X, Telegram), Connection info, Local test history, Keyboard shortcuts",
+    "featureList": "Download speed, Upload speed, Latency (ping), Jitter, Estimated packet loss, Latency under load (bufferbloat grade), Multi-connection measurement (up to 6 parallel TCP connections), Live speed graph, Connection score, Real-world download time estimates, Result ID, Result sharing (image card, link, PNG, JSON, WhatsApp, X, Telegram), Connection info, Local test history, Installable PWA with offline support, Keyboard shortcuts",
     "offers": { "@type": "Offer", "price": "0", "priceCurrency": "USD" },
     "publisher": {
       "@type": "Organization",
@@ -80,7 +83,12 @@
       {
         "@type": "Question",
         "name": "كيف يقيس SPOS Net سرعة الإنترنت؟",
-        "acceptedAnswer": { "@type": "Answer", "text": "عبر طلبات HTTP متوازية إلى أقرب نقطة Cloudflare، مع استبعاد مرحلة التسارع الأولى من الحساب، وحساب المتوسط على النافذة المستقرة وتتبّع الذروة، وقياس زمن الاستجابة من زمن أول بايت (TTFB)." }
+        "acceptedAnswer": { "@type": "Answer", "text": "عبر تدفقات HTTP متوازية إلى أقرب نقطة Cloudflare، موزَّعة على عدة اتصالات TCP مستقلة (حتى 6) عبر منافذ HTTPS متعددة — مثل التطبيقات الرائدة — مع بدء الحسبة من أول بايت، واستبعاد مرحلة تسارع TCP، وحساب المتوسط على النافذة المستقرة، وقياس الاستجابة من زمن أول بايت (TTFB)، ويُقاس الرفع بعدّ البايتات لحظة إرسالها." }
+      },
+      {
+        "@type": "Question",
+        "name": "لماذا قد تختلف النتيجة عن تطبيقات أخرى مثل Speedtest؟",
+        "acceptedAnswer": { "@type": "Answer", "text": "الأدوات المختلفة تستخدم خوادم ومناهج مختلفة. بعضها يقيس إلى خادم محلي داخل شبكة مزوّدك عبر مسار قصير فتظهر أرقام أعلى، بينما يقيس SPOS Net إلى أقرب نقطة Cloudflare العالمية عبر مسار واقعي شامل يشبه الاستخدام الفعلي. فروقات صغيرة (حوالي ±10%) طبيعية بين أي أداتين، ويعمل SPOS Net باتصالات متوازية متعددة لتعبئة الخط بالكامل مثل التطبيقات الاحترافية." }
       },
       {
         "@type": "Question",
@@ -114,16 +122,7 @@
     <!-- ═══ Header ═══ -->
     <header class="topbar">
       <div class="brand" aria-label="SPOS Net">
-        <svg class="brand-mark" viewBox="0 0 26 26" aria-hidden="true">
-          <defs>
-            <linearGradient id="bm-g" x1="0" y1="0" x2="1" y2="1">
-              <stop offset="0" stop-color="#3d7fd6"/><stop offset="1" stop-color="#a48ffc"/>
-            </linearGradient>
-          </defs>
-          <path d="M6.6 19.4a9.4 9.4 0 1 1 12.8 0" fill="none" stroke="url(#bm-g)" stroke-width="2.6" stroke-linecap="round"/>
-          <line x1="11.6" y1="16.4" x2="16.1" y2="5.1" stroke="#e9edf5" stroke-width="2.2" stroke-linecap="round"/>
-          <circle cx="13" cy="13" r="2.1" fill="#e9edf5"/>
-        </svg>
+        <img class="brand-logo" src="assets/img/logo.png" alt="" width="28" height="28" decoding="async">
         <span class="brand-name">SPOS&nbsp;Net</span>
       </div>
       <div class="topbar-actions">
@@ -233,6 +232,10 @@
             <span data-i18n="a.share">مشاركة النتيجة</span>
           </button>
           <div class="menu" id="share-menu" hidden role="menu">
+            <button class="menu-item menu-item-accent" id="mi-img" type="button" role="menuitem">
+              <svg viewBox="0 0 24 24" aria-hidden="true" fill="none" stroke="currentColor" stroke-width="1.7" stroke-linecap="round" stroke-linejoin="round"><rect x="3" y="3" width="18" height="18" rx="2"/><circle cx="9" cy="9" r="2"/><path d="m21 15-3.1-3.1a2 2 0 0 0-2.8 0L6 21"/><path d="M12 3v5"/><path d="m9.5 5.5 2.5-2.5 2.5 2.5"/></svg>
+              <span data-i18n="sh.img">مشاركة كصورة</span>
+            </button>
             <button class="menu-item" id="mi-link" type="button" role="menuitem">
               <svg viewBox="0 0 24 24" aria-hidden="true" fill="none" stroke="currentColor" stroke-width="1.7" stroke-linecap="round"><path d="M10 13a5 5 0 0 0 7.5.5l3-3a5 5 0 0 0-7-7l-1.7 1.7"/><path d="M14 11a5 5 0 0 0-7.5-.5l-3 3a5 5 0 0 0 7 7l1.7-1.7"/></svg>
               <span data-i18n="sh.link">نسخ رابط النتيجة</span>
@@ -280,6 +283,7 @@
 
     <!-- ═══ Footer ═══ -->
     <footer class="foot">
+      <img class="foot-logo" src="assets/img/logo.png" alt="SPOS" width="22" height="22" decoding="async">
       <span data-i18n="f.tag">أداة مفتوحة المصدر لقياس سرعة الإنترنت</span>
       <span class="foot-sep" aria-hidden="true">·</span>
       <span data-i18n="f.dev">من تطوير</span>
@@ -359,8 +363,10 @@
       </div>
       <div class="about-block">
         <div class="set-label" data-i18n="s.how">كيف نقيس؟</div>
-        <p data-i18n="s.howBody">يُجرى القياس عبر طلبات HTTP متوازية إلى أقرب نقطة Cloudflare، مع استبعاد مرحلة التسارع الأولى وحساب المتوسط على النافذة المستقرة، وقياس الاستجابة من زمن أول بايت.</p>
-        <p class="about-credit"><span id="ver-tag">SPOS Net v2.1.0</span> · <a href="https://spos.ly" target="_blank" rel="noopener">SPOS — صولة للأنظمة</a></p>
+        <p data-i18n="s.howBody">يعمل التنزيل والرفع بتدفقات متوازية موزَّعة على عدة اتصالات TCP مستقلة، مع استبعاد مرحلة التسارع وحساب المتوسط على النافذة المستقرة.</p>
+        <div class="set-label" style="margin-top:14px" data-i18n="s.whyDiff">لماذا قد تختلف النتيجة عن تطبيقات أخرى؟</div>
+        <p data-i18n="s.whyDiffBody">بعض التطبيقات تقيس إلى خادم محلي قريب فيُظهر أرقاماً أعلى، بينما يقيس SPOS Net إلى أقرب نقطة Cloudflare عبر مسار واقعي. الفروقات الصغيرة طبيعية، والفروقات الكبيرة تعني غالباً اختلاف المسار أو المنهجية.</p>
+        <p class="about-credit"><span id="ver-tag">SPOS Net v2.2.0</span> · <a href="https://spos.ly" target="_blank" rel="noopener">SPOS — صولة للأنظمة</a></p>
       </div>
     </div>
   </aside>

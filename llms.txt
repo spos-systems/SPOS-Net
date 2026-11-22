@@ -9,8 +9,11 @@ License: MIT
 
 ## Metrics
 
-- Download speed: parallel HTTP streams to the nearest Cloudflare edge; ramp-up excluded, stable-window average, peak tracking.
-- Upload speed: adaptive-chunk parallel POST streams.
+- Download speed: parallel streams to the nearest Cloudflare edge, spread across up to 6 independent TCP connections (multiple HTTPS ports) to fully saturate the line like leading test apps; clock starts at the first byte, ramp-up excluded, stable-window average, peak tracking.
+- Upload speed: parallel XHR POST streams with real-time upload progress — bytes are counted the moment they hit the wire; adaptive chunk size; same ramp exclusion and windowing.
+- Result sharing: share as an image card straight into the phone's share sheet (Web Share API files), copy a result link (results encoded in the URL — nothing stored server-side), save PNG, export JSON, WhatsApp / X / Telegram / native share.
+- Every result gets a short Result ID (e.g. SP-4F9K2Q1) shown in the details drawer and on the shared image card.
+- Real-world estimates: time to download a 1 GB file, a 10 GB game, a 7 GB 4K movie and to upload 500 MB of photos, computed from the measured speeds.
 - Latency (ping): time-to-first-byte of empty requests; min / median / average / max reported.
 - Jitter: mean absolute difference between consecutive latency samples.
 - Estimated packet loss: failure rate of a burst of short timed requests (HTTP-level estimate).
@@ -22,19 +25,20 @@ License: MIT
 
 - Display units: Mbps / MB/s / kbps.
 - Phase duration: 8 / 12 / 20 seconds.
-- Parallel connections: 1 / 2 / 4 / 8 / 16.
+- Parallel streams: 1 / 4 / 8 / 16, automatically spread across up to 6 independent TCP connections.
 - Toggles: latency-under-load sampling, packet-loss burst.
-- Result actions: copy shareable link, copy text summary, export PNG image, export JSON, share via WhatsApp / X / Telegram, native share.
-- Connection details: IP, ASN / ISP, city, Cloudflare colo, HTTP protocol.
+- Connection details: IP, ASN / ISP, city, Cloudflare colo, HTTP protocol, measurement method (streams × TCP connections).
 - Connection score (0–100) with usage suitability badges (4K streaming, HD streaming, video calls, competitive gaming, casual gaming, large downloads) and a one-line verdict.
-- Local test history (last 10 runs, stored in the browser only).
+- Local test history (last 20 runs, stored in the browser only).
 - Keyboard shortcuts: Space start/stop, S settings, D details.
 - URL parameters: `?lang=ar|en` opens a specific language; `?auto=1` starts the test automatically (kiosks/embeds). First visit follows the browser language automatically.
-- Installable as a PWA (offline shell via service worker).
+- Installable PWA with a real offline app shell (service worker precaching), install button on supported browsers and an iOS “Add to Home Screen” guide on Safari.
 
 ## How it works
 
-The site is fully static (zero dependencies, no build step) and performs all measurements from the visitor's browser against public, CORS-enabled Cloudflare speed endpoints (`speed.cloudflare.com/__down`, `/__up`, `/meta`). No accounts, no ads, no tracking, no server-side logging.
+The site is fully static (zero dependencies, no build step) and performs all measurements from the visitor's browser against public, CORS-enabled Cloudflare speed endpoints (`speed.cloudflare.com/__down`, `/__up`, `/meta`, served on HTTPS ports 443/2053/2083/2087/2096/8443 — the alternate ports let the browser open multiple independent TCP connections, mirroring multi-connection desktop test apps). No accounts, no ads, no tracking, no server-side logging.
+
+Why results can differ between tools: some apps test against an ISP-local server over a short path (higher numbers), while SPOS Net measures to the nearest global Cloudflare edge over a realistic end-to-end path; small differences (±10%) between any two tools are normal.
 
 ## Links
 
