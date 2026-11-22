@@ -45,10 +45,10 @@
   <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
   <meta name="apple-mobile-web-app-title" content="SPOS Net">
   <link rel="manifest" href="manifest.webmanifest">
-  <link rel="preload" as="font" type="font/woff2" crossorigin href="assets/fonts/cairo-arabic-600-93eb7989.woff2">
-  <link rel="preload" as="font" type="font/woff2" crossorigin href="assets/fonts/tajawal-arabic-400-3a7b8d1a.woff2">
-  <link rel="stylesheet" href="assets/css/fonts.css">
-  <link rel="stylesheet" href="assets/css/style.css">
+  <link rel="preload" as="font" type="font/woff2" crossorigin href="assets/fonts/readex-pro-arabic-var.woff2">
+  <link rel="preload" as="font" type="font/woff2" crossorigin href="assets/fonts/readex-pro-latin-var.woff2">
+  <link rel="stylesheet" href="assets/css/fonts.css?v=4">
+  <link rel="stylesheet" href="assets/css/style.css?v=4">
 
   <script type="application/ld+json">
   {
@@ -60,7 +60,7 @@
     "applicationCategory": "UtilitiesApplication",
     "operatingSystem": "Any",
     "browserRequirements": "Requires JavaScript",
-    "softwareVersion": "2.2.0",
+    "softwareVersion": "4.0.0",
     "isAccessibleForFree": true,
     "inLanguage": ["ar", "en"],
     "description": "Free, open-source internet speed test: download, upload, latency (idle and under load), jitter, estimated packet loss and a bufferbloat grade — with a live speed graph, professional options, result sharing and export.",
@@ -147,13 +147,8 @@
     <header class="topbar">
       <div class="brand" aria-label="SPOS Net">
         <svg class="brand-mark" viewBox="0 0 64 64" aria-hidden="true">
-          <defs>
-            <linearGradient id="bm-g" x1="0" y1="0" x2="1" y2="1">
-              <stop offset="0" stop-color="#22d3ee"/><stop offset="1" stop-color="#6366f1"/>
-            </linearGradient>
-          </defs>
           <rect x="3" y="3" width="58" height="58" rx="15" fill="#0f141f" stroke="#232c3f"/>
-          <path d="M 18.57 45.43 A 19 19 0 1 1 45.43 45.43" fill="none" stroke="url(#bm-g)" stroke-width="6" stroke-linecap="round"/>
+          <path d="M 18.57 45.43 A 19 19 0 1 1 45.43 45.43" fill="none" stroke="#38bdf8" stroke-width="6" stroke-linecap="round"/>
           <line x1="32" y1="32" x2="36.4" y2="16.9" stroke="#e9edf5" stroke-width="4" stroke-linecap="round"/>
           <circle cx="32" cy="32" r="3" fill="#e9edf5"/>
         </svg>
@@ -321,13 +316,8 @@
     <footer class="foot">
       <div class="foot-side">
         <svg class="foot-mark" viewBox="0 0 64 64" aria-hidden="true">
-            <defs>
-              <linearGradient id="fm-g" x1="0" y1="0" x2="1" y2="1">
-                <stop offset="0" stop-color="#22d3ee"/><stop offset="1" stop-color="#6366f1"/>
-              </linearGradient>
-            </defs>
             <rect x="3" y="3" width="58" height="58" rx="15" fill="#0f141f" stroke="#232c3f"/>
-            <path d="M 18.57 45.43 A 19 19 0 1 1 45.43 45.43" fill="none" stroke="url(#bm-g)" stroke-width="6" stroke-linecap="round"/>
+            <path d="M 18.57 45.43 A 19 19 0 1 1 45.43 45.43" fill="none" stroke="#38bdf8" stroke-width="6" stroke-linecap="round"/>
             <line x1="32" y1="32" x2="36.4" y2="16.9" stroke="#e9edf5" stroke-width="4" stroke-linecap="round"/>
             <circle cx="32" cy="32" r="3" fill="#e9edf5"/>
           </svg>
@@ -417,7 +407,7 @@
         <p data-i18n="s.howBody">يعمل التنزيل والرفع بتدفقات متوازية موزَّعة على عدة اتصالات TCP مستقلة، مع استبعاد مرحلة التسارع، ثم حساب النتيجة بالمنهجية المعتمدة في Speedtest: ترتيب العينات واستبعاد الأبطأ وحذف أسرع عينتين ومتوسط الباقي.</p>
         <div class="set-label" style="margin-top:14px" data-i18n="s.whyDiff">لماذا قد تختلف النتيجة عن تطبيقات أخرى؟</div>
         <p data-i18n="s.whyDiffBody">اعتمدنا في الإصدار 2.3 منهجية Speedtest.net نفسها في حساب النتيجة النهائية، لذا يجب أن تتطابق القراءات تقريباً. الفروقات الصغيرة (±10%) طبيعية بين أي أداتين، والكبيرة تعني غالباً اختلاف المسار أو ازدحام لحظي.</p>
-        <p class="about-credit"><span id="ver-tag">SPOS Net v2.3.0</span> · <a href="https://spos.ly" target="_blank" rel="noopener">SPOS — صولة للأنظمة</a></p>
+        <p class="about-credit"><span id="ver-tag">SPOS Net v4.0.0</span> · <a href="https://spos.ly" target="_blank" rel="noopener">SPOS — صولة للأنظمة</a></p>
       </div>
     </div>
   </aside>
@@ -523,6 +513,6 @@
 
   <noscript><div class="nojs">يتطلب SPOS Net تفعيل JavaScript لتشغيل اختبار السرعة. — SPOS Net requires JavaScript to run the speed test.</div></noscript>
 
-  <script type="module" src="assets/js/app.js"></script>
+  <script type="module" src="assets/js/app.js?v=4"></script>
 </body>
 </html>

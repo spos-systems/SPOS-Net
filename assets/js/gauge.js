@@ -49,12 +49,12 @@ export class Gauge {
 
     const defs = el('defs', {}, s);
     this.grad = el('linearGradient', { id: 'g-grad', x1: '0', y1: '0', x2: '1', y2: '0' }, defs);
-    this.stopA = el('stop', { offset: '0', 'stop-color': '#22d3ee' }, this.grad);
-    this.stopB = el('stop', { offset: '1', 'stop-color': '#3b82f6' }, this.grad);
+    this.stopA = el('stop', { offset: '0', 'stop-color': '#38bdf8' }, this.grad);
+    this.stopB = el('stop', { offset: '1', 'stop-color': '#38bdf8' }, this.grad);
 
-    /* soft glow behind the value arc — tinted with the phase accent */
+    /* soft glow behind the value arc — single accent hue, kept subtle */
     const filter = el('filter', { id: 'g-glow', x: '-60%', y: '-60%', width: '220%', height: '220%' }, defs);
-    this.glow = el('feDropShadow', { dx: '0', dy: '0', stdDeviation: '7', 'flood-color': '#3b82f6', 'flood-opacity': '.55' }, filter);
+    this.glow = el('feDropShadow', { dx: '0', dy: '0', stdDeviation: '6', 'flood-color': '#38bdf8', 'flood-opacity': '.38' }, filter);
     const shadow = el('filter', { id: 'g-shadow', x: '-40%', y: '-40%', width: '180%', height: '180%' }, defs);
     el('feDropShadow', { dx: '0', dy: '1.5', stdDeviation: '2.2', 'flood-color': '#000', 'flood-opacity': '.45' }, shadow);
 
@@ -74,7 +74,7 @@ export class Gauge {
       const label = el('text', {
         x: lx, y: ly, 'text-anchor': 'middle', 'dominant-baseline': 'middle',
         fill: 'var(--tick-label)', 'font-size': '14.5',
-        'font-family': "'Cairo', ui-monospace, monospace",
+        'font-family': "'Readex Pro', ui-monospace, monospace",
         'font-weight': '700',
       }, tickG);
       label.textContent = String(SEGS[i]);
@@ -108,7 +108,7 @@ export class Gauge {
       stroke: '#eef2fa', 'stroke-width': '3.6', 'stroke-linecap': 'round',
       filter: 'url(#g-shadow)',
     }, this.needle);
-    this.hubDot = el('circle', { cx: CX, cy: CY, r: '0', fill: '#3b82f6' }, this.needle);
+    this.hubDot = el('circle', { cx: CX, cy: CY, r: '0', fill: '#38bdf8' }, this.needle);
   }
 
   /* set phase colors: [start, end, glowHex] */
@@ -122,13 +122,13 @@ export class Gauge {
   /* drive by speed value (Mbps) */
   setValue(mbps) { this.mode = 'value'; this.breathing = false; this.target = this.fracOf(mbps); this.#needle(true); }
 
-  /* rest state: dim with a slow breathing arc — the start button owns the
-     pre-start screen, the dial itself stays quietly alive */
+  /* rest state: dial completely empty — the start button owns the pre-start
+     screen; only the CSS track breathing keeps the dial alive */
   restIdle() {
     this.mode = 'value';
     this.display = this.target = 0;
     this.showNeedle = false;
-    this.breathing = !this.reduced;
+    this.breathing = false;
     this.needle.setAttribute('opacity', '0');
     this.dot.setAttribute('opacity', '0');
   }

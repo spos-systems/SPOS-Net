@@ -32,7 +32,7 @@ A complete professional measurement: download and upload speed, latency (idle an
 | PWA كامل | يعمل بلا اتصال بعد أول زيارة (service worker)، زر تثبيت دائم في الشريط العلوي مع دليل خطوات لكل منصة (أندرويد/iPhone/سطح المكتب) |
 | شعار الشركة | شعار SPOS في الترويسة والتذييل وبطاقة المشاركة |
 
-خطوط عربية حديثة (Cairo + Tajawal) مضافة ذاتياً · Zero dependencies · No build step · No ads · No tracking · MIT license
+خط عربي حديث (Readex Pro) مضاف ذاتياً · Zero dependencies · No build step · No ads · No tracking · MIT license
 
 ## الصفحة | Screenshots
 
@@ -76,7 +76,7 @@ python3 -m http.server 8000
 ```
 index.html              الصفحة الوحيدة (شاشة واحدة)
 assets/css/style.css    نظام التصميم
-assets/css/fonts.css    خطوط ذاتية الاستضافة (Cairo + Tajawal)
+assets/css/fonts.css    خطوط ذاتية الاستضافة (Readex Pro)
 assets/js/engine.js     محرك القياس متعدد الاتصالات
 assets/js/gauge.js      العداد الدائري (SVG)
 assets/js/i18n.js       العربية / English

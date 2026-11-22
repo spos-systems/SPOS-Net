@@ -1,7 +1,8 @@
 /* ═══════════════════════════════════════════════════════════════
-   SPOS Net — design system (v2.3)
-   Deep-space canvas with a living aurora, vivid cyan→blue→violet
-   accents, glassy overlays. One accent family per phase.
+   SPOS Net — design system (v4)
+   Quiet deep-space canvas, ONE cyan accent for every phase,
+   neutral greys for the rest. Semantic colors appear only as
+   small grade badges — never as decoration.
    ═══════════════════════════════════════════════════════════════ */
 
 :root {
@@ -16,28 +17,21 @@
   --txt-2: #a5b1c8;
   --txt-3: #66738e;
 
-  --acc: #38bdf8;          /* download / primary  */
+  --acc: #38bdf8;          /* the one accent — every phase, every action */
   --acc-2: #7dd3fc;
-  --vio: #c084fc;          /* upload              */
-  --vio-2: #e9d5ff;
-  --pink: #f472b6;
-  --steel: #7d8ba8;        /* latency phase       */
-  --steel-2: #aeb9d2;
-  --ok: #34d399;
+  --acc-ink: #07131f;       /* dark ink on accent surfaces */
+  --ok: #34d399;            /* semantic only: grades & pass/fail marks */
   --warn: #fbbf24;
   --bad: #f87171;
-
-  --grad-acc: linear-gradient(135deg, #22d3ee 0%, #3b82f6 55%, #6366f1 100%);
-  --grad-vio: linear-gradient(135deg, #a78bfa 0%, #f472b6 100%);
 
   --gauge-track: rgba(148, 163, 194, .13);
   --tick: rgba(148, 163, 194, .38);
   --tick-minor: rgba(148, 163, 194, .16);
   --tick-label: #8b97b0;
 
-  --sans: "Tajawal", "Cairo", "Segoe UI", system-ui, sans-serif;
-  --mono: "Cairo", "Tajawal", ui-monospace, "Cascadia Mono", monospace;  /* display numerals */
-  --disp: "Cairo", "Tajawal", sans-serif;                                 /* wordmark & hero digits */
+  --sans: "Readex Pro", "Segoe UI", system-ui, sans-serif;
+  --mono: "Readex Pro", ui-monospace, "Cascadia Mono", monospace;   /* display numerals */
+  --disp: "Readex Pro", system-ui, sans-serif;                       /* wordmark & hero digits */
 
   --r-sm: 10px;
   --r-md: 14px;
@@ -65,35 +59,18 @@ body {
   overflow-x: hidden;
 }
 
-/* ── living aurora — three slow-drifting light fields ── */
-body::before,
-body::after {
+/* ── one quiet ambient glow, fixed, single hue — no drifting colors ── */
+body::before {
   content: "";
   position: fixed;
   z-index: -1;
+  top: -34vmax;
+  inset-inline-end: -20vmax;
+  width: 90vmax;
+  height: 90vmax;
   border-radius: 50%;
   pointer-events: none;
-  will-change: transform;
-}
-body::before {
-  width: 78vmax; height: 78vmax;
-  top: -26vmax; inset-inline-end: -22vmax;
-  background: radial-gradient(closest-side, rgba(59, 130, 246, .26), rgba(59, 130, 246, 0) 70%);
-  animation: drift-a 26s ease-in-out infinite alternate;
-}
-body::after {
-  width: 70vmax; height: 70vmax;
-  bottom: -24vmax; inset-inline-start: -20vmax;
-  background: radial-gradient(closest-side, rgba(139, 92, 246, .22), rgba(139, 92, 246, 0) 70%);
-  animation: drift-b 32s ease-in-out infinite alternate;
-}
-@keyframes drift-a {
-  from { transform: translate3d(0, 0, 0) scale(1); }
-  to   { transform: translate3d(-9vmax, 7vmax, 0) scale(1.12); }
-}
-@keyframes drift-b {
-  from { transform: translate3d(0, 0, 0) scale(1.08); }
-  to   { transform: translate3d(8vmax, -6vmax, 0) scale(.94); }
+  background: radial-gradient(closest-side, rgba(56, 189, 248, .10), rgba(56, 189, 248, 0) 70%);
 }
 
 ::selection { background: rgba(56, 189, 248, .3); }
@@ -131,22 +108,15 @@ a { color: inherit; }
 .brand-mark {
   width: 27px; height: 27px;
   display: block;
-  filter: drop-shadow(0 2px 10px rgba(56, 189, 248, .35));
 }
 .brand-name {
   font-family: var(--disp);
   font-size: 16px;
-  font-weight: 800;
+  font-weight: 700;
   letter-spacing: .01em;
   user-select: none;
-  background: linear-gradient(120deg, #eef2fa 30%, #7dd3fc);
-  -webkit-background-clip: text; background-clip: text;
-  -webkit-text-fill-color: transparent;
+  color: var(--txt);
 }
-
-/* install CTA — always visible on phones, make it inviting */
-#btn-install { color: #a5e5ff; border-color: rgba(56, 189, 248, .4); }
-#btn-install:hover { color: #d8f1ff; box-shadow: 0 0 16px rgba(56, 189, 248, .25); }
 
 .topbar-actions { display: flex; align-items: center; gap: 6px; }
 
@@ -170,7 +140,7 @@ a { color: inherit; }
   transition: color .15s var(--ease), border-color .15s var(--ease), box-shadow .2s var(--ease);
   min-width: 44px;
 }
-.chip-btn:hover { color: var(--txt); border-color: var(--acc); box-shadow: 0 0 14px rgba(56, 189, 248, .18); }
+.chip-btn:hover { color: var(--txt); border-color: var(--acc); }
 .chip-btn:focus-visible { outline: 2px solid rgba(56, 189, 248, .55); outline-offset: 1px; }
 .chip-btn svg { width: 13px; height: 13px; }
 .chip-btn.has-icon { display: inline-flex; align-items: center; gap: 6px; }
@@ -228,18 +198,9 @@ html[dir="rtl"] .skel { animation-direction: reverse; }
 .gauge-halo {
   position: absolute; inset: 6%;
   border-radius: 50%;
-  background: radial-gradient(closest-side, rgba(56, 189, 248, .1), transparent 72%);
+  background: radial-gradient(closest-side, rgba(56, 189, 248, .08), transparent 72%);
   transition: background 1s var(--ease);
   pointer-events: none;
-}
-html[data-ph="upload"] .gauge-halo {
-  background: radial-gradient(closest-side, rgba(192, 132, 252, .12), transparent 72%);
-}
-html[data-ph="ping"] .gauge-halo {
-  background: radial-gradient(closest-side, rgba(125, 139, 168, .08), transparent 72%);
-}
-html[data-state="done"] .gauge-halo {
-  background: radial-gradient(closest-side, rgba(52, 211, 153, .09), transparent 72%);
 }
 
 #gauge-svg { position: absolute; inset: 0; width: 100%; height: 100%; }
@@ -274,12 +235,9 @@ html[data-state="idle"] .g-track { animation: track-breathe 3.8s ease-in-out inf
 }
 .g-phase-dot {
   width: 6px; height: 6px; border-radius: 50%;
-  background: var(--steel-2);
+  background: var(--acc);
   animation: pulse 1.3s ease-in-out infinite;
 }
-html[data-ph="download"] .g-phase-dot { background: var(--acc); box-shadow: 0 0 10px rgba(56, 189, 248, .8); }
-html[data-ph="upload"] .g-phase-dot { background: var(--vio); box-shadow: 0 0 10px rgba(192, 132, 252, .8); }
-html[data-ph="ping"] .g-phase-dot { background: var(--steel-2); }
 
 /* readout: number centered, unit beneath it */
 .g-readout { display: flex; flex-direction: column; align-items: center; gap: 1px; direction: ltr; }
@@ -290,9 +248,7 @@ html[data-ph="ping"] .g-phase-dot { background: var(--steel-2); }
   letter-spacing: -.01em;
   line-height: 1;
   font-variant-numeric: tabular-nums;
-  text-shadow: 0 0 26px rgba(56, 189, 248, .22);
 }
-html[data-ph="upload"] .g-num { text-shadow: 0 0 26px rgba(192, 132, 252, .24); }
 .g-unit {
   font-size: 12px;
   color: var(--txt-3);
@@ -321,31 +277,30 @@ html[data-ph="upload"] .g-num { text-shadow: 0 0 26px rgba(192, 132, 252, .24); 
 }
 html[lang="en"] .scale-hint { letter-spacing: .04em; }
 
-/* start button — the hero of the pre-start screen */
+/* start button — the hero of the pre-start screen: solid accent, dark ink */
 .start-btn {
   position: relative;
   width: 118px; height: 118px;
   border-radius: 50%;
-  background: var(--grad-acc);
-  border: 1px solid rgba(255, 255, 255, .28);
+  background: var(--acc);
+  border: 0;
   font-size: 19px;
   font-weight: 700;
-  color: #fff;
+  color: var(--acc-ink);
   display: flex; align-items: center; justify-content: center;
-  text-shadow: 0 1px 6px rgba(2, 12, 27, .4);
-  box-shadow: 0 14px 44px rgba(56, 148, 248, .38), inset 0 1px 0 rgba(255, 255, 255, .3);
+  box-shadow: 0 14px 40px rgba(56, 189, 248, .28);
   transition: box-shadow .2s var(--ease), transform .14s var(--ease), filter .2s var(--ease);
 }
 .start-btn:hover {
-  filter: brightness(1.09);
-  box-shadow: 0 18px 60px rgba(56, 148, 248, .55), inset 0 1px 0 rgba(255, 255, 255, .3);
+  filter: brightness(1.07);
+  box-shadow: 0 18px 54px rgba(56, 189, 248, .4);
 }
 .start-btn:active { transform: scale(.96); }
 .start-btn:focus-visible { outline: 2px solid rgba(125, 211, 252, .8); outline-offset: 5px; }
 .start-ring {
   position: absolute; inset: -7px;
   border-radius: 50%;
-  border: 2px solid rgba(56, 189, 248, .5);
+  border: 2px solid rgba(56, 189, 248, .4);
   animation: start-pulse 2.8s cubic-bezier(.2, .6, .35, 1) infinite;
   pointer-events: none;
 }
@@ -414,13 +369,8 @@ html[dir="rtl"] .ph-sep svg { transform: scaleX(-1); }
   color: var(--txt);
   border-color: rgba(56, 189, 248, .45);
   background: rgba(56, 189, 248, .08);
-  box-shadow: 0 0 18px rgba(56, 189, 248, .12);
 }
 .ph.active .ph-dot { background: var(--acc); opacity: 1; animation: pulse 1.3s ease-in-out infinite; }
-html[data-ph="upload"] .ph.active { border-color: rgba(192, 132, 252, .45); background: rgba(192, 132, 252, .08); box-shadow: 0 0 18px rgba(192, 132, 252, .12); }
-html[data-ph="upload"] .ph.active .ph-dot { background: var(--vio); }
-html[data-ph="ping"] .ph.active { border-color: rgba(174, 185, 210, .4); background: rgba(174, 185, 210, .06); }
-html[data-ph="ping"] .ph.active .ph-dot { background: var(--steel-2); }
 @keyframes pulse { 50% { opacity: .35; } }
 
 .ph.done { color: var(--txt-2); }
@@ -462,23 +412,10 @@ html[lang="en"] .m-head { letter-spacing: .07em; text-transform: uppercase; font
 }
 .m-val .unit { font-size: 11px; color: var(--txt-3); }
 
+/* metrics stay neutral — phase identity comes from the label, not the color */
 .metric.on .m-head { color: var(--txt-2); }
 .metric.on .m-head svg { opacity: 1; }
 .metric.on .num { color: var(--txt); }
-
-/* per-metric accent colors (alive, not noisy) */
-#m-ping.on .m-head, #m-ping.on .m-head svg { color: var(--ok); }
-#m-jitter.on .m-head, #m-jitter.on .m-head svg { color: var(--warn); }
-#m-loss.on .m-head, #m-loss.on .m-head svg { color: var(--bad); }
-#m-download.on .m-head, #m-download.on .m-head svg { color: var(--acc); }
-#m-upload.on .m-head, #m-upload.on .m-head svg { color: var(--vio); }
-#m-download.on .num { text-shadow: 0 0 20px rgba(56, 189, 248, .25); }
-#m-upload.on .num { text-shadow: 0 0 20px rgba(192, 132, 252, .25); }
-
-/* quality tinting for latency-family metrics (after a finished run) */
-.m-val .num.good { color: var(--ok); }
-.m-val .num.mid { color: var(--warn); }
-.m-val .num.low { color: var(--bad); }
 
 /* ── actions (space always reserved — layout stays locked) ── */
 .actions {
@@ -505,18 +442,18 @@ html[data-state="done"] .actions { opacity: 1; pointer-events: auto; }
 .btn:focus-visible { outline: 2px solid rgba(56, 189, 248, .55); outline-offset: 1px; }
 
 .btn-accent {
-  background: var(--grad-acc);
+  background: var(--acc);
   border-color: transparent;
-  color: #fff;
+  color: var(--acc-ink);
   font-weight: 600;
-  box-shadow: 0 8px 26px rgba(47, 128, 237, .35);
+  box-shadow: 0 6px 20px rgba(56, 189, 248, .22);
 }
 .btn-accent:hover {
-  background: var(--grad-acc);
-  color: #fff;
-  filter: brightness(1.1);
+  background: var(--acc);
+  color: var(--acc-ink);
+  filter: brightness(1.08);
   border-color: transparent;
-  box-shadow: 0 10px 34px rgba(47, 128, 237, .5);
+  box-shadow: 0 8px 26px rgba(56, 189, 248, .32);
 }
 
 .btn-ghost { border-color: transparent; color: var(--txt-3); height: 36px; }
@@ -670,17 +607,16 @@ html[dir="rtl"] .drawer { --dir: -1; }
   color: var(--txt);
   border-color: var(--acc);
   background: var(--panel-2);
-  box-shadow: 0 4px 18px rgba(56, 189, 248, .12);
 }
 .share-tile:focus-visible { outline: 2px solid rgba(56, 189, 248, .55); outline-offset: 1px; }
 .share-tile.st-accent {
-  background: var(--grad-acc);
+  background: var(--acc);
   border-color: transparent;
-  color: #fff;
+  color: var(--acc-ink);
   font-weight: 600;
-  box-shadow: 0 8px 24px rgba(47, 128, 237, .35);
+  box-shadow: 0 6px 20px rgba(56, 189, 248, .22);
 }
-.share-tile.st-accent:hover { filter: brightness(1.1); color: #fff; border-color: transparent; }
+.share-tile.st-accent:hover { filter: brightness(1.08); color: var(--acc-ink); border-color: transparent; }
 
 /* settings */
 .set-group { display: flex; flex-direction: column; gap: 9px; }
@@ -781,7 +717,7 @@ html[dir="rtl"] .switch[aria-checked="true"] i { right: 20px; }
 .score-side { flex: 1; display: flex; flex-direction: column; gap: 8px; }
 .score-grade { font-size: 14px; font-weight: 600; }
 .score-bar { height: 5px; border-radius: 3px; background: var(--panel-3); overflow: hidden; }
-.score-bar i { display: block; height: 100%; border-radius: 3px; background: var(--grad-acc); transition: width .6s var(--ease); }
+.score-bar i { display: block; height: 100%; border-radius: 3px; background: var(--acc); transition: width .6s var(--ease); }
 
 .d-sec-title {
   font-size: 11.5px; font-weight: 600;
@@ -921,7 +857,7 @@ html[lang="en"] .cp-head { letter-spacing: .08em; text-transform: uppercase; fon
 }
 .ip-toggle:hover { border-color: var(--acc); }
 
-.cp-grade { font-family: var(--disp); font-weight: 800; }
+.cp-grade { font-family: var(--disp); font-weight: 700; }
 .cp-grade.good { color: var(--ok); }
 .cp-grade.mid { color: var(--warn); }
 .cp-grade.low { color: var(--bad); }
@@ -982,12 +918,11 @@ html[lang="en"] .cp-head { letter-spacing: .08em; text-transform: uppercase; fon
   font-size: 12px;
 }
 .hs-row:last-child { border-bottom: 0; }
-.hs-row.now { background: linear-gradient(90deg, rgba(56, 189, 248, .07), transparent); border-radius: 8px; }
+.hs-row.now { background: rgba(56, 189, 248, .05); border-radius: 8px; }
 .hs-time { color: var(--txt-3); font-family: var(--mono); font-size: 11px; direction: ltr; }
 .hs-dl, .hs-ul { display: inline-flex; align-items: center; gap: 6px; color: var(--txt-2); direction: ltr; justify-self: start; }
 .hs-dl svg, .hs-ul svg { width: 12px; height: 12px; opacity: .8; flex: none; }
-.hs-dl svg { color: var(--acc); }
-.hs-ul svg { color: var(--vio); }
+.hs-dl svg, .hs-ul svg { color: var(--txt-3); }
 .hs-dl b, .hs-ul b { font-family: var(--mono); font-weight: 700; color: var(--txt); }
 .hs-pg { color: var(--txt-3); font-family: var(--mono); direction: ltr; font-size: 11.5px; }
 .hs-pg small { font-size: 9.5px; }
@@ -998,14 +933,6 @@ html[lang="en"] .cp-head { letter-spacing: .08em; text-transform: uppercase; fon
   text-align: center;
 }
 .hs-note { font-size: 10.5px; color: var(--txt-3); margin-top: 9px; }
-
-/* confetti layer */
-.confetti {
-  position: fixed; inset: 0;
-  width: 100vw; height: 100vh;
-  pointer-events: none;
-  z-index: 90;
-}
 
 /* ═══ install sheet ═══ */
 .ins-hero {
@@ -1166,7 +1093,6 @@ html[lang="en"] .cp-head { letter-spacing: .08em; text-transform: uppercase; fon
 /* ═══ motion ═══ */
 @media (prefers-reduced-motion: reduce) {
   *, *::before, *::after { animation-duration: .01ms !important; transition-duration: .01ms !important; }
-  body::before, body::after { animation: none !important; }
 }
 
 /* history best/count separation */

@@ -8,11 +8,11 @@ const $ = (s, r = document) => r.querySelector(s);
 const $$ = (s, r = document) => [...r.querySelectorAll(s)];
 
 const SITE_URL = 'https://net.spos.ly/';
-const VERSION = '3.0.0';
+const VERSION = '4.0.0';
 
 /* self-hosted webfonts (see assets/css/fonts.css) */
-const F_DISP = "'Cairo', 'Tajawal', sans-serif";       /* numerals, wordmark, dates */
-const F_TXT = "'Tajawal', 'Cairo', sans-serif";         /* Arabic labels */
+const F_DISP = "'Readex Pro', system-ui, sans-serif";   /* numerals, wordmark, dates */
+const F_TXT = "'Readex Pro', system-ui, sans-serif";      /* Arabic labels */
 
 const DEFAULTS = { lang: 'ar', unit: 'mbps', duration: 12, streams: 8, loaded: true, loss: true, shareFmt: 'square' };
 
@@ -144,11 +144,12 @@ async function initMeta() {
 
 /* ── gauge + readout ─────────────────────────────────────── */
 
+/* every phase shares the one accent — tonal steps of the SAME hue only */
 const PHASE_COLORS = {
-  ping: ['#7d8ba8', '#aeb9d2', '#94a3b8'],
-  download: ['#22d3ee', '#3b82f6', '#38bdf8'],
-  upload: ['#a78bfa', '#f472b6', '#c084fc'],
-  done: ['#22d3ee', '#3b82f6', '#38bdf8'],
+  ping: ['#38bdf8', '#38bdf8', '#7dd3fc'],
+  download: ['#38bdf8', '#38bdf8', '#7dd3fc'],
+  upload: ['#38bdf8', '#38bdf8', '#7dd3fc'],
+  done: ['#38bdf8', '#38bdf8', '#7dd3fc'],
 };
 
 function setPhasePill(ph) {
@@ -238,10 +239,10 @@ const SPARK = {
       ctx.setLineDash([]);
     }
 
-    /* series: download (cyan-blue) then upload (violet-pink) */
+    /* series: download (accent) then upload (soft white) */
     for (const [kind, color, fill] of [
-      ['down', '#38bdf8', 'rgba(56,189,248,.22)'],
-      ['up', '#c084fc', 'rgba(192,132,252,.20)'],
+      ['down', '#38bdf8', 'rgba(56,189,248,.20)'],
+      ['up', 'rgba(233,237,245,.78)', 'rgba(233,237,245,.10)'],
     ]) {
       const pts = this.samples.filter((s) => s[1] === kind);
       if (pts.length < 2) continue;
@@ -396,12 +397,8 @@ function updateRunTitle(v) {
   }, 400);
 }
 
-/* quality tint for latency-family metrics */
-function qCls(kind, v) {
-  if (v == null || isNaN(v)) return '';
-  if (kind === 'ping') return v <= 40 ? 'good' : v <= 90 ? 'mid' : 'low';
-  if (kind === 'jitter') return v <= 10 ? 'good' : v <= 25 ? 'mid' : 'low';
-  if (kind === 'loss') return v <= 0.5 ? 'good' : v <= 2 ? 'mid' : 'low';
+/* quality is communicated by the grade badge — metric numbers stay neutral */
+function qCls() {
   return '';
 }
 
@@ -438,7 +435,6 @@ function finishTest(result) {
   hist.unshift(compact(result));
   saveHistory(hist);
   renderHistory();
-  CONFETTI.fire();
   document.title = t('title');
 }
 
@@ -742,10 +738,7 @@ function drawHistChart(hist) {
 
   ctx.beginPath();
   data.forEach((d, i) => (i ? ctx.lineTo(X(i), Y(d.dl)) : ctx.moveTo(X(i), Y(d.dl))));
-  const lg = ctx.createLinearGradient(0, 0, w, 0);
-  lg.addColorStop(0, '#22d3ee');
-  lg.addColorStop(1, '#818cf8');
-  ctx.strokeStyle = lg;
+  ctx.strokeStyle = '#38bdf8';
   ctx.lineWidth = 2;
   ctx.lineJoin = 'round';
   ctx.stroke();
@@ -755,7 +748,7 @@ function drawHistChart(hist) {
     const last = i === data.length - 1;
     ctx.beginPath();
     ctx.arc(X(i), Y(d.dl), last ? 4 : 2.4, 0, 7);
-    ctx.fillStyle = last ? '#fff' : 'rgba(125,211,252,.85)';
+    ctx.fillStyle = last ? '#fff' : 'rgba(56,189,248,.55)';
     ctx.fill();
   });
 
@@ -808,66 +801,6 @@ function exportCsv() {
   ].join(','));
   downloadBlob(new Blob(['\uFEFF' + [head, ...rows].join('\n')], { type: 'text/csv;charset=utf-8' }), 'sposnet-history.csv');
 }
-
-/* ── celebration on completion (lightweight, reduced-motion aware) ── */
-
-const CONFETTI = {
-  fire() {
-    if (matchMedia('(prefers-reduced-motion: reduce)').matches) return;
-    const box = $('#gauge-box')?.getBoundingClientRect();
-    if (!box) return;
-    const cv = document.createElement('canvas');
-    const dpr = Math.min(2, devicePixelRatio || 1);
-    cv.width = innerWidth * dpr;
-    cv.height = innerHeight * dpr;
-    cv.className = 'confetti';
-    document.body.appendChild(cv);
-    const ctx = cv.getContext('2d');
-    ctx.scale(dpr, dpr);
-    const colors = ['#22d3ee', '#3b82f6', '#818cf8', '#c084fc', '#f472b6', '#34d399', '#fbbf24'];
-    const cx = box.left + box.width / 2;
-    const cy = box.top + box.height / 2;
-    const N = 110;
-    const parts = Array.from({ length: N }, () => {
-      const a = -Math.PI / 2 + (Math.random() - 0.5) * 2.4;
-      const v = 5 + Math.random() * 8;
-      return {
-        x: cx, y: cy,
-        vx: Math.cos(a) * v, vy: Math.sin(a) * v - 2,
-        s: 3 + Math.random() * 5,
-        r: Math.random() * Math.PI, vr: (Math.random() - 0.5) * 0.3,
-        c: colors[(Math.random() * colors.length) | 0],
-        life: 1,
-      };
-    });
-    const t0 = performance.now();
-    const step = (now) => {
-      const el = now - t0;
-      ctx.clearRect(0, 0, innerWidth, innerHeight);
-      let alive = false;
-      for (const p of parts) {
-        p.life = 1 - el / 1500;
-        if (p.life <= 0) continue;
-        alive = true;
-        p.vy += 0.22;
-        p.vx *= 0.992;
-        p.x += p.vx;
-        p.y += p.vy;
-        p.r += p.vr;
-        ctx.save();
-        ctx.globalAlpha = Math.max(0, p.life);
-        ctx.translate(p.x, p.y);
-        ctx.rotate(p.r);
-        ctx.fillStyle = p.c;
-        ctx.fillRect(-p.s / 2, -p.s / 2, p.s, p.s * 0.62);
-        ctx.restore();
-      }
-      if (alive && el < 1600) requestAnimationFrame(step);
-      else cv.remove();
-    };
-    requestAnimationFrame(step);
-  },
-};
 
 /* ── drawers / share sheet ───────────────────────────────── */
 
@@ -1031,10 +964,7 @@ function drawMark(x, cx, cy, s) {
   x.stroke();
 
   const r = s * 0.30;
-  const grad = x.createLinearGradient(cx - r, cy - r, cx + r, cy + r);
-  grad.addColorStop(0, '#22d3ee');
-  grad.addColorStop(1, '#6366f1');
-  x.strokeStyle = grad;
+  x.strokeStyle = '#38bdf8';
   x.lineWidth = s * 0.095;
   x.lineCap = 'round';
   /* 270° arc: -135°…+135° in gauge convention → 135°…405° canvas */
@@ -1067,12 +997,9 @@ function drawCardGauge(x, cx, cy, R, frac, lw) {
 
   const a0 = (135 * Math.PI) / 180;
   const a1 = a0 + ((405 - 135) * Math.PI) / 180 * Math.max(0.004, Math.min(1, frac));
-  const grad = x.createLinearGradient(cx - R, cy, cx + R, cy);
-  grad.addColorStop(0, '#22d3ee');
-  grad.addColorStop(1, '#3b82f6');
-  x.strokeStyle = grad;
-  x.shadowColor = 'rgba(56,189,248,.5)';
-  x.shadowBlur = lw * 1.6;
+  x.strokeStyle = '#38bdf8';
+  x.shadowColor = 'rgba(56,189,248,.35)';
+  x.shadowBlur = lw * 1.4;
   x.beginPath();
   x.arc(cx, cy, R, a0, a1);
   x.stroke();
@@ -1129,12 +1056,11 @@ function drawCard(x, W, H, c, r) {
   const DISP = F_DISP, TXT = F_TXT;
   x.textBaseline = 'middle';
 
-  /* background */
+  /* background — one accent hue, two very quiet glows */
   x.fillStyle = '#0a0e17';
   x.fillRect(0, 0, W, H);
-  blobGrad(x, W * 0.85, H * 0.08, Math.max(W, H) * 0.55, 'rgba(59,130,246,.17)');
-  blobGrad(x, W * 0.10, H * 0.94, Math.max(W, H) * 0.52, 'rgba(139,92,246,.14)');
-  blobGrad(x, W * 0.50, H * 0.42, Math.max(W, H) * 0.75, 'rgba(34,211,238,.05)');
+  blobGrad(x, W * 0.85, H * 0.08, Math.max(W, H) * 0.55, 'rgba(56,189,248,.10)');
+  blobGrad(x, W * 0.10, H * 0.94, Math.max(W, H) * 0.52, 'rgba(56,189,248,.06)');
 
   const score = scoreOf(r);
   const gradeColor = score.cls === 'good' ? '#34d399' : score.cls === 'mid' ? '#fbbf24' : '#f87171';
@@ -1152,7 +1078,7 @@ function drawCard(x, W, H, c, r) {
   const dir = RTL ? -1 : 1;
 
   drawMark(x, startEdge + dir * mkS / 2, hY, mkS);
-  run(x, 'SPOS Net', `800 ${Math.round(mkS * 0.56)}px ${DISP}`, startEdge + dir * (mkS + 18), hY + 1, RTL ? 'right' : 'left', 'ltr', '#eef2fa');
+  run(x, 'SPOS Net', `700 ${Math.round(mkS * 0.56)}px ${DISP}`, startEdge + dir * (mkS + 18), hY + 1, RTL ? 'right' : 'left', 'ltr', '#eef2fa');
   run(x, ds + (c.id ? '  ·  ' + c.id : ''), `500 ${sq || pt_ ? 24 : 26}px ${DISP}`, endEdge, hY + 1, RTL ? 'left' : 'right', 'ltr', '#66738e');
 
   /* ── gauge + big number ── */
@@ -1186,12 +1112,12 @@ function drawCard(x, W, H, c, r) {
   x.stroke();
   pairCenter(x, RTL, gLbl, pFont, RTL ? 'rtl' : 'ltr', gScore, pNumFont, gx, pillY + pillH / 2 + 1, 20, gradeColor, gradeColor);
 
-  /* ── metric tiles ── */
+  /* ── metric tiles — neutral values; color stays on the grade pill only ── */
   const tiles = [
-    [t('m.upload'), fmtSpeed(c.ul), 'Mbps', '#c084fc'],
-    [t('m.ping'), fmtMs(c.pg), 'ms', '#7ee2b8'],
-    [t('m.jitter'), fmtMs(c.jt), 'ms', '#fcd34d'],
-    [t('m.loss'), c.ls == null ? '—' : String(c.ls), '%', '#fda4af'],
+    [t('m.upload'), fmtSpeed(c.ul), 'Mbps', '#f2f5fb'],
+    [t('m.ping'), fmtMs(c.pg), 'ms', '#f2f5fb'],
+    [t('m.jitter'), fmtMs(c.jt), 'ms', '#f2f5fb'],
+    [t('m.loss'), c.ls == null ? '—' : String(c.ls), '%', '#f2f5fb'],
   ];
 
   if (pt_) {
@@ -1258,7 +1184,7 @@ async function ensureCardFonts() {
   try {
     await Promise.all([
       document.fonts.load(`700 120px ${F_DISP}`, 'سرعة 123.4'),
-      document.fonts.load(`800 40px ${F_DISP}`, 'SPOS Net net.spos.ly'),
+      document.fonts.load(`500 40px ${F_DISP}`, 'SPOS Net net.spos.ly'),
       document.fonts.load(`600 30px ${F_TXT}`, 'التنزيل الرفع صولة للأنظمة'),
       document.fonts.load(`500 26px ${F_TXT}`, 'سرعة الاستجابة فقدان'),
     ]);

@@ -8,19 +8,21 @@
  *     RIPEstat, API calls) are never intercepted — they must hit the network.
  *   • Legacy caches are purged on activate.
  */
-const VERSION = 'sposnet-v3.0.0';
+const VERSION = 'sposnet-v4.0.0';
 
 const SHELL = [
   './',
   './index.html',
   './manifest.webmanifest',
   './404.html',
-  './assets/css/fonts.css',
-  './assets/css/style.css',
-  './assets/js/app.js',
+  './assets/css/fonts.css?v=4',
+  './assets/css/style.css?v=4',
+  './assets/js/app.js?v=4',
   './assets/js/engine.js',
   './assets/js/gauge.js',
   './assets/js/i18n.js',
+  './assets/fonts/readex-pro-arabic-var.woff2',
+  './assets/fonts/readex-pro-latin-var.woff2',
   './assets/img/company-logo.png',
   './assets/img/favicon.svg',
   './assets/img/favicon-32.png',
