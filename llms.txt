@@ -1,0 +1,38 @@
+# SPOS Net
+
+> SPOS Net is a free, open-source internet speed test that measures download speed, upload speed, latency (idle and under load), jitter and estimated packet loss — with professional options, result sharing and export.
+
+URL: https://spos-systems.github.io/SPOS-Net/
+Language: Arabic (default, RTL) and English
+Developer: SPOS — صولة للأنظمة (https://spos.ly)
+License: MIT
+
+## Metrics
+
+- Download speed: parallel HTTP streams to the nearest Cloudflare edge; ramp-up excluded, stable-window average, peak tracking.
+- Upload speed: adaptive-chunk parallel POST streams.
+- Latency (ping): time-to-first-byte of empty requests; min / median / average / max reported.
+- Jitter: mean absolute difference between consecutive latency samples.
+- Estimated packet loss: failure rate of a burst of short timed requests (HTTP-level estimate).
+- Latency under load: latency samples taken while the line is saturated (bufferbloat indicator).
+
+## Professional options
+
+- Display units: Mbps / MB/s / kbps.
+- Phase duration: 8 / 12 / 20 seconds.
+- Parallel connections: 1 / 2 / 4 / 8 / 16.
+- Toggles: latency-under-load sampling, packet-loss burst.
+- Result actions: copy shareable link, copy text summary, export PNG image, export JSON, native share.
+- Connection details: IP, ASN / ISP, city, Cloudflare colo, HTTP protocol.
+- Connection score (0–100) with usage suitability badges (4K streaming, HD streaming, video calls, competitive gaming, casual gaming, large downloads).
+- Local test history (last 10 runs, stored in the browser only).
+
+## How it works
+
+The site is fully static (zero dependencies, no build step) and performs all measurements from the visitor's browser against public, CORS-enabled Cloudflare speed endpoints (`speed.cloudflare.com/__down`, `/__up`, `/meta`). No accounts, no ads, no tracking, no server-side logging.
+
+## Links
+
+- Source: https://github.com/spos-systems/SPOS-Net
+- Live app: https://spos-systems.github.io/SPOS-Net/
+- Releases: https://github.com/spos-systems/SPOS-Net/releases

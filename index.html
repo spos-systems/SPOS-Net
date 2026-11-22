@@ -1,484 +1,312 @@
 <!DOCTYPE html>
-<html lang="ar" dir="rtl">
+<html lang="ar" dir="rtl" data-state="idle">
 <head>
   <meta charset="utf-8">
   <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
-  <title>SPOS Net | اختبار سرعة الإنترنت — قياس التحميل والرفع والبنق وفقدان الحزم</title>
-  <meta name="description" content="اختبر سرعة الإنترنت لديك مجاناً وبشكل فوري: سرعة التحميل والرفع، زمن الاستجابة (Ping)، التذبذب (Jitter) وفقدان الحزم. أداة مفتوحة المصدر سريعة من صولة للأنظمة SPOS — بدون تسجيل وبدون إعلانات.">
-  <meta name="keywords" content="اختبار سرعة الإنترنت, قياس سرعة النت, سرعة التحميل, سرعة الرفع, بنق, Ping, Jitter, فقدان الحزم, speed test, فحص النت, ليبيا, SPOS Net">
-  <meta name="author" content="صولة للأنظمة SPOS">
+  <title>SPOS Net — اختبار سرعة الإنترنت: تنزيل، رفع، استجابة، تذبذب</title>
+  <meta name="description" content="اختبر سرعة الإنترنت بدقة احترافية: سرعة التنزيل والرفع، زمن الاستجابة (Ping)، التذبذب (Jitter) وفقدان الحزم — مع خيارات متقدمة وتصدير النتائج ومشاركتها. مجاني، مفتوح المصدر، بدون إعلانات.">
+  <meta name="keywords" content="اختبار سرعة الإنترنت, قياس سرعة النت, سرعة التحميل, سرعة الرفع, بنق, Ping, Jitter, Packet Loss, speed test, فحص النت, SPOS Net">
+  <meta name="author" content="SPOS Net">
   <meta name="robots" content="index, follow, max-image-preview:large, max-snippet:-1">
-  <meta name="theme-color" content="#070f1c" media="(prefers-color-scheme: dark)">
-  <meta name="theme-color" content="#f2f6fd" media="(prefers-color-scheme: light)">
-  <meta name="geo.region" content="LY">
-  <meta name="rating" content="general">
+  <meta name="theme-color" content="#090b11">
+  <meta name="color-scheme" content="dark">
+  <meta name="application-name" content="SPOS Net">
 
   <!-- Open Graph -->
   <meta property="og:type" content="website">
   <meta property="og:site_name" content="SPOS Net">
-  <meta property="og:title" content="SPOS Net | اختبار سرعة الإنترنت — تحميل، رفع، بنق، فقدان حزم">
-  <meta property="og:description" content="قياس فوري ومجاني لسرعة الإنترنت: التحميل والرفع وزمن الاستجابة وفقدان الحزم. أداة مفتوحة المصدر من صولة للأنظمة SPOS.">
+  <meta property="og:title" content="SPOS Net — اختبار سرعة الإنترنت">
+  <meta property="og:description" content="قياس احترافي لسرعة التنزيل والرفع وزمن الاستجابة والتذبذب وفقدان الحزم — مجاني ومفتوح المصدر.">
   <meta property="og:url" content="https://spos-systems.github.io/SPOS-Net/">
-  <meta property="og:image" content="https://spos-systems.github.io/SPOS-Net/assets/img/og-image.png">
+  <meta property="og:image" content="https://spos-systems.github.io/SPOS-Net/assets/img/og.png">
   <meta property="og:image:width" content="1200">
   <meta property="og:image:height" content="630">
   <meta property="og:image:alt" content="SPOS Net — اختبار سرعة الإنترنت">
-  <meta property="og:locale" content="ar_LY">
+  <meta property="og:locale" content="ar_AR">
   <meta property="og:locale:alternate" content="en_US">
 
   <!-- Twitter -->
   <meta name="twitter:card" content="summary_large_image">
-  <meta name="twitter:title" content="SPOS Net | اختبار سرعة الإنترنت">
-  <meta name="twitter:description" content="قياس فوري ومجاني لسرعة التحميل والرفع والبنق وفقدان الحزم — مفتوح المصدر.">
-  <meta name="twitter:image" content="https://spos-systems.github.io/SPOS-Net/assets/img/og-image.png">
+  <meta name="twitter:title" content="SPOS Net — اختبار سرعة الإنترنت">
+  <meta name="twitter:description" content="قياس احترافي لسرعة التنزيل والرفع والاستجابة والتذبذب وفقدان الحزم — مجاني ومفتوح المصدر.">
+  <meta name="twitter:image" content="https://spos-systems.github.io/SPOS-Net/assets/img/og.png">
 
   <link rel="canonical" href="https://spos-systems.github.io/SPOS-Net/">
   <link rel="icon" href="favicon.ico" sizes="48x48">
+  <link rel="icon" type="image/svg+xml" href="assets/img/favicon.svg">
   <link rel="icon" type="image/png" sizes="32x32" href="assets/img/favicon-32.png">
-  <link rel="icon" type="image/png" sizes="16x16" href="assets/img/favicon-16.png">
   <link rel="apple-touch-icon" href="assets/img/icon-180.png">
   <link rel="manifest" href="manifest.webmanifest">
-
-  <link rel="preload" href="assets/fonts/cairo-arabic.woff2" as="font" type="font/woff2" crossorigin>
-  <link rel="preload" href="assets/fonts/cairo-latin.woff2" as="font" type="font/woff2" crossorigin>
+  <link rel="stylesheet" href="assets/css/fonts.css">
   <link rel="stylesheet" href="assets/css/style.css">
 
   <script type="application/ld+json">
   {
     "@context": "https://schema.org",
-    "@graph": [
-      {
-        "@type": "WebApplication",
-        "@id": "https://spos-systems.github.io/SPOS-Net/#app",
-        "name": "SPOS Net",
-        "alternateName": ["NetCheck", "SPOS Net — اختبار سرعة الإنترنت"],
-        "url": "https://spos-systems.github.io/SPOS-Net/",
-        "applicationCategory": "UtilityApplication",
-        "applicationSubCategory": "Internet speed test",
-        "operatingSystem": "Any (web browser)",
-        "browserRequirements": "Requires JavaScript",
-        "inLanguage": ["ar", "en"],
-        "isAccessibleForFree": true,
-        "offers": { "@type": "Offer", "price": "0", "priceCurrency": "LYD" },
-        "author": { "@id": "https://spos.ly/#org" },
-        "publisher": { "@id": "https://spos.ly/#org" },
-        "screenshot": "https://spos-systems.github.io/SPOS-Net/docs/screenshots/desktop-ar.png",
-        "featureList": [
-          "قياس سرعة التحميل (Download)",
-          "قياس سرعة الرفع (Upload)",
-          "قياس زمن الاستجابة (Ping) والتذبذب (Jitter)",
-          "قياس فقدان الحزم (Packet Loss)",
-          "زمن الاستجابة أثناء الحمل (Loaded Latency)",
-          "تقييم جاهزية الاتصال للبث والألعاب والمكالمات",
-          "يعمل بالعربية والإنجليزية، ثنائي الاتجاه RTL/LTR",
-          "تطبيق ويب PWA قابل للتثبيت يعمل بدون خادم"
-        ]
-      },
-      {
-        "@type": "Organization",
-        "@id": "https://spos.ly/#org",
-        "name": "صولة للأنظمة",
-        "alternateName": "SPOS",
-        "url": "https://spos.ly",
-        "logo": "https://spos-systems.github.io/SPOS-Net/assets/img/icon-512.png",
-        "slogan": "حلول برمجية متكاملة - من الفكرة إلى الإطلاق",
-        "areaServed": { "@type": "Country", "name": "Libya" },
-        "contactPoint": {
-          "@type": "ContactPoint",
-          "telephone": "+218-93-553-5606",
-          "contactType": "customer service",
-          "availableLanguage": ["Arabic", "English"]
-        },
-        "sameAs": ["https://github.com/spos-systems"]
-      },
-      {
-        "@type": "WebSite",
-        "@id": "https://spos-systems.github.io/SPOS-Net/#website",
-        "url": "https://spos-systems.github.io/SPOS-Net/",
-        "name": "SPOS Net",
-        "inLanguage": "ar",
-        "publisher": { "@id": "https://spos.ly/#org" }
-      },
-      {
-        "@type": "HowTo",
-        "name": "كيف تختبر سرعة الإنترنت لديك",
-        "totalTime": "PT30S",
-        "tool": [{ "@type": "HowToTool", "name": "متصفح إنترنت حديث" }],
-        "step": [
-          { "@type": "HowToStep", "position": 1, "name": "افتح أداة SPOS Net", "text": "افتح موقع SPOS Net من أي متصفح على الجوال أو الحاسوب دون الحاجة إلى تسجيل." },
-          { "@type": "HowToStep", "position": 2, "name": "اضغط زر ابدأ الاختبار", "text": "تتصل الأداة تلقائياً بأقرب خادم قياس إليك عبر شبكة Cloudflare العالمية." },
-          { "@type": "HowToStep", "position": 3, "name": "انتظر اكتمال القياسات", "text": "تُقاس بالتتابع: زمن الاستجابة، فقدان الحزم، سرعة التحميل، ثم سرعة الرفع، وتستغرق نحو 30 ثانية." },
-          { "@type": "HowToStep", "position": 4, "name": "اقرأ النتائج وشاركها", "text": "تظهر سرعة التحميل والرفع والبنق وفقدان الحزم مع تقييم جاهزية اتصالك لكل نشاط، ويمكنك مشاركة النتيجة أو حفظها." }
-        ]
-      },
-      {
-        "@type": "FAQPage",
-        "mainEntity": [
-          {
-            "@type": "Question",
-            "name": "كيف يعمل اختبار السرعة في SPOS Net؟",
-            "acceptedAnswer": { "@type": "Answer", "text": "يُجري SPOS Net سلسلة من القياسات داخل متصفحك مباشرة: أولاً يرسل عدة طلبات صغيرة لقياس زمن الاستجابة (Ping) والتذبذب (Jitter)، ثم يفتح عدة اتصالات متوازية لتنزيل بيانات من أقرب نقطة شبكة (Edge) إليك عبر شبكة Cloudflare لقياس سرعة التحميل، ويرفع بيانات لقياس سرعة الرفع، وأخيراً يرسل مجموعات من الطلبات الصغيرة لحساب نسبة فقدان الحزم التقديرية. لا يحتاج الموقع إلى أي إضافات أو برامج خارجية." }
-          },
-          {
-            "@type": "Question",
-            "name": "ما هي سرعة الإنترنت الجيدة؟",
-            "acceptedAnswer": { "@type": "Answer", "text": "تعتمد على استخدامك: للتصفح ومواقع التواصل تكفي سرعة تحميل 10 ميغابت/ثانية، لبث الفيديو بدقة HD يُنصح بـ 10 ميغابت/ثانية، ولبدقة 4K تحتاج 35 ميغابت/ثانية على الأقل، أما الألعاب التنافسية فالأهم فيها زمن الاستجابة (أقل من 60 مللي ثانية) وفقدان حزم منخفض أكثر من سرعة التحميل." }
-          },
-          {
-            "@type": "Question",
-            "name": "ما هو زمن الاستجابة (Ping) وما هو التذبذب (Jitter)؟",
-            "acceptedAnswer": { "@type": "Answer", "text": "زمن الاستجابة هو الوقت الذي يستغرقه طلب صغير للذهاب إلى الخادم والعودة ويقاس بالمللي ثانية؛ كلما انخفض كان الاتصال أكثر استجابة، وهو عامل حاسم في الألعاب والمكالمات. أما التذبذب فهو تفاوت زمن الاستجابة بين الطلبات المتتالية، والتذبذب المرتفع يسبب تقطعاً في المكالمات والفيديو حتى لو كان زمن الاستجابة جيداً." }
-          },
-          {
-            "@type": "Question",
-            "name": "ما هو فقدان الحزم (Packet Loss)؟",
-            "acceptedAnswer": { "@type": "Answer", "text": "فقدان الحزم يعني ضياع جزء من حزم البيانات أثناء انتقالها بين جهازك والخادم، وتسببه عادة مشاكل في الشبكة المحلية (واي فاي ضعيف) أو ازدحام لدى مزود الخدمة. النسب فوق 1% تسبب تقطعاً ملحوظاً في المكالمات والألعاب. ولأن المتصفحات لا تستطيع إرسال ICMP، يقيسه SPOS Net تقديرياً عبر فشل أو انتهاء مهلة طلبات HTTP صغيرة متعددة." }
-          },
-          {
-            "@type": "Question",
-            "name": "لماذا تختلف النتيجة عن أدوات أخرى مثل Speedtest أو Fast.com؟",
-            "acceptedAnswer": { "@type": "Answer", "text": "الاختلاف طبيعي وأسبابه: خوادم مختلفة في مواقع جغرافية وبأحمال مختلفة، توقيت مختلف للاختبار، بروتوكولات مختلفة (HTTP/2 مقابل HTTP/3)، طريقة الاتصال (واي فاي مقابل كيبل)، وحالة الشبكة لحظة القياس. الأفضل إجراء الاختبار عدة مرات في أوقات مختلفة والاعتماد على المتوسط، مع إغلاق التطبيقات التي تستهلك الاتصال أثناء القياس." }
-          },
-          {
-            "@type": "Question",
-            "name": "هل الأداة مجانية؟ وهل يتم جمع بياناتي؟",
-            "acceptedAnswer": { "@type": "Answer", "text": "SPOS Net مجاني تماماً، بدون إعلانات وبدون تسجيل وبدون تتبع. لا تُرسل نتائجك إلى أي خادم يخصنا؛ سجل اختباراتك محفوظ محلياً في متصفحك فقط ويمكنك حذفه في أي وقت. تُجرى القياسات عبر شبكة Cloudflare العامة التي ترى عنوان IP الخاص بك لتوجيه الطلب فقط." }
-          },
-          {
-            "@type": "Question",
-            "name": "هل يعمل SPOS Net على الجوال؟",
-            "acceptedAnswer": { "@type": "Answer", "text": "نعم، الموقع متجاوب مع كل المقاسات ويعمل على متصفحات الجوال والحاسوب، ويمكن تثبيته كتطبيق (PWA) من قائمة المتصفح ليظهر كتطبيق مستقل على جهازك." }
-          }
-        ]
-      }
-    ]
+    "@type": "WebApplication",
+    "name": "SPOS Net",
+    "alternateName": "SPOS Net — اختبار سرعة الإنترنت",
+    "url": "https://spos-systems.github.io/SPOS-Net/",
+    "applicationCategory": "UtilitiesApplication",
+    "operatingSystem": "Any",
+    "browserRequirements": "Requires JavaScript",
+    "inLanguage": ["ar", "en"],
+    "description": "Free, open-source internet speed test: download, upload, latency (idle and loaded), jitter and estimated packet loss, with professional options, result sharing and export.",
+    "featureList": "Download speed, Upload speed, Latency (ping), Jitter, Estimated packet loss, Loaded latency, Result sharing, PNG/JSON export, Connection info, Test history",
+    "offers": { "@type": "Offer", "price": "0", "priceCurrency": "USD" },
+    "publisher": {
+      "@type": "Organization",
+      "name": "SPOS — صولة للأنظمة",
+      "url": "https://spos.ly"
+    }
   }
   </script>
 </head>
 <body>
-  <a class="skip-link" href="#test" data-i18n="a11y.skip">تخطَّ إلى اختبار السرعة</a>
+  <h1 class="sr-only">SPOS Net — اختبار سرعة الإنترنت المجاني</h1>
+  <p class="sr-only">أداة مفتوحة المصدر لقياس سرعة الإنترنت: سرعة التنزيل والرفع، زمن الاستجابة، التذبذب، وفقدان الحزم، مع خيارات احترافية ونتائج قابلة للمشاركة والتصدير.</p>
 
-  <header class="site-header">
-    <div class="wrap header-inner">
-      <a class="brand" href="./" aria-label="SPOS Net — الصفحة الرئيسية">
-        <img class="brand-logo" src="assets/img/favicon-64.png" alt="" width="36" height="36">
-        <span class="brand-name">SPOS<b>Net</b></span>
-      </a>
-      <nav class="header-actions" aria-label="أدوات الصفحة">
-        <a class="icon-btn" href="https://github.com/spos-systems/SPOS-Net" target="_blank" rel="noopener" data-aria="a11y.github" aria-label="مستودع المشروع على GitHub">
-          <svg viewBox="0 0 24 24" width="20" height="20" fill="currentColor" aria-hidden="true"><path d="M12 .5C5.65.5.5 5.65.5 12c0 5.08 3.29 9.39 7.86 10.91.58.1.79-.25.79-.55v-2.15c-3.2.7-3.87-1.36-3.87-1.36-.52-1.33-1.28-1.68-1.28-1.68-1.04-.71.08-.7.08-.7 1.15.08 1.76 1.19 1.76 1.19 1.03 1.76 2.7 1.25 3.35.95.1-.74.4-1.25.72-1.54-2.55-.29-5.24-1.28-5.24-5.69 0-1.25.45-2.28 1.19-3.08-.12-.29-.52-1.46.11-3.05 0 0 .97-.31 3.17 1.18a10.9 10.9 0 0 1 5.78 0c2.2-1.49 3.17-1.18 3.17-1.18.63 1.59.23 2.76.11 3.05.74.8 1.19 1.83 1.19 3.08 0 4.42-2.7 5.39-5.26 5.68.41.36.77 1.05.77 2.13v3.16c0 .3.21.66.8.55A11.52 11.52 0 0 0 23.5 12C23.5 5.65 18.35.5 12 .5z"/></svg>
+  <div class="app">
+    <!-- ═══ Header ═══ -->
+    <header class="topbar">
+      <div class="brand" aria-label="SPOS Net">
+        <svg class="brand-mark" viewBox="0 0 26 26" aria-hidden="true">
+          <defs>
+            <linearGradient id="bm-g" x1="0" y1="0" x2="1" y2="1">
+              <stop offset="0" stop-color="#3d7fd6"/><stop offset="1" stop-color="#a48ffc"/>
+            </linearGradient>
+          </defs>
+          <path d="M6.6 19.4a9.4 9.4 0 1 1 12.8 0" fill="none" stroke="url(#bm-g)" stroke-width="2.6" stroke-linecap="round"/>
+          <line x1="11.6" y1="16.4" x2="16.1" y2="5.1" stroke="#e9edf5" stroke-width="2.2" stroke-linecap="round"/>
+          <circle cx="13" cy="13" r="2.1" fill="#e9edf5"/>
+        </svg>
+        <span class="brand-name">SPOS&nbsp;Net</span>
+      </div>
+      <div class="topbar-actions">
+        <button id="btn-lang" class="chip-btn" type="button" aria-label="Switch language">EN</button>
+        <a class="icon-btn" href="https://github.com/spos-systems/SPOS-Net" target="_blank" rel="noopener" aria-label="GitHub">
+          <svg viewBox="0 0 24 24" aria-hidden="true"><path fill="currentColor" d="M12 .5A11.5 11.5 0 0 0 .5 12a11.5 11.5 0 0 0 7.86 10.93c.58.1.79-.25.79-.56v-1.97c-3.2.7-3.87-1.54-3.87-1.54-.53-1.33-1.28-1.69-1.28-1.69-1.05-.72.08-.7.08-.7 1.16.08 1.77 1.19 1.77 1.19 1.03 1.77 2.7 1.26 3.36.96.1-.75.4-1.26.73-1.55-2.55-.29-5.23-1.28-5.23-5.68 0-1.26.45-2.28 1.19-3.09-.12-.29-.52-1.46.11-3.05 0 0 .97-.31 3.18 1.18a11.05 11.05 0 0 1 5.8 0c2.2-1.49 3.17-1.18 3.17-1.18.63 1.59.23 2.76.12 3.05.74.81 1.18 1.83 1.18 3.09 0 4.41-2.69 5.38-5.25 5.67.41.36.78 1.05.78 2.12v3.15c0 .31.2.67.8.56A11.5 11.5 0 0 0 23.5 12 11.5 11.5 0 0 0 12 .5Z"/></svg>
         </a>
-        <button class="icon-btn" id="themeToggle" type="button" data-aria="a11y.theme" aria-label="تبديل المظهر الفاتح والداكن">
-          <svg class="icon-sun" viewBox="0 0 24 24" width="20" height="20" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" aria-hidden="true"><circle cx="12" cy="12" r="4.2"/><path d="M12 2.5v2.4M12 19.1v2.4M2.5 12h2.4M19.1 12h2.4M4.9 4.9l1.7 1.7M17.4 17.4l1.7 1.7M19.1 4.9l-1.7 1.7M6.6 17.4l-1.7 1.7"/></svg>
-          <svg class="icon-moon" viewBox="0 0 24 24" width="20" height="20" fill="currentColor" aria-hidden="true"><path d="M21 14.2A9 9 0 1 1 9.8 3 7.2 7.2 0 0 0 21 14.2z"/></svg>
+        <button id="btn-settings" class="icon-btn" type="button" aria-label="الإعدادات" data-i18n-aria="aria.settings" aria-haspopup="dialog">
+          <svg viewBox="0 0 24 24" aria-hidden="true" fill="none" stroke="currentColor" stroke-width="1.7" stroke-linecap="round"><path d="M20 7h-9M14 17H5"/><circle cx="17" cy="17" r="3"/><circle cx="7" cy="7" r="3"/></svg>
         </button>
-        <button class="lang-btn" id="langToggle" type="button" aria-label="Switch language">EN</button>
-      </nav>
+      </div>
+    </header>
+
+    <!-- ═══ Stage ═══ -->
+    <main class="stage">
+      <div class="conn-line" id="conn-line">
+        <span class="skel" id="conn-skel" aria-hidden="true"></span>
+        <span id="conn-text" hidden></span>
+      </div>
+
+      <section class="gauge-zone">
+        <div class="gauge" id="gauge-box">
+          <div class="gauge-halo" aria-hidden="true"></div>
+          <svg id="gauge-svg" viewBox="0 0 400 400" role="img" aria-label="عداد السرعة" data-i18n-aria="aria.gauge"></svg>
+          <div class="gauge-center">
+            <div class="g-label" id="g-label">اختبار سرعة الإنترنت</div>
+            <div class="g-readout" id="g-readout" hidden>
+              <span class="g-num" id="g-num">0</span>
+              <span class="g-unit" id="g-unit">Mbps</span>
+            </div>
+            <div class="g-grade" id="g-grade" hidden></div>
+            <button class="start-btn" id="btn-start" type="button">ابدأ</button>
+          </div>
+        </div>
+        <button class="stop-btn" id="btn-stop" type="button" hidden>
+          <svg viewBox="0 0 24 24" aria-hidden="true" fill="none" stroke="currentColor" stroke-width="1.7" stroke-linecap="round"><rect x="6.5" y="6.5" width="11" height="11" rx="2"/></svg>
+          <span>إيقاف</span>
+        </button>
+        <div class="scale-hint" id="scale-hint" data-i18n="gauge.scaleHint">مقياس العداد غير خطي حتى 1000</div>
+      </section>
+
+      <ol class="phases" id="phases">
+        <li class="ph" data-ph="ping">
+          <i class="ph-dot" aria-hidden="true"></i><span data-i18n="phase.ping">الاستجابة</span>
+          <svg class="ph-check" viewBox="0 0 24 24" aria-hidden="true" fill="none" stroke="currentColor" stroke-width="2.4" stroke-linecap="round" stroke-linejoin="round"><path d="M20 6 9 17l-5-5"/></svg>
+        </li>
+        <li class="ph-sep" aria-hidden="true"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.7" stroke-linecap="round"><path d="m9 18 6-6-6-6"/></svg></li>
+        <li class="ph" data-ph="download">
+          <i class="ph-dot" aria-hidden="true"></i><span data-i18n="phase.download">التنزيل</span>
+          <svg class="ph-check" viewBox="0 0 24 24" aria-hidden="true" fill="none" stroke="currentColor" stroke-width="2.4" stroke-linecap="round" stroke-linejoin="round"><path d="M20 6 9 17l-5-5"/></svg>
+        </li>
+        <li class="ph-sep" aria-hidden="true"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.7" stroke-linecap="round"><path d="m9 18 6-6-6-6"/></svg></li>
+        <li class="ph" data-ph="upload">
+          <i class="ph-dot" aria-hidden="true"></i><span data-i18n="phase.upload">الرفع</span>
+          <svg class="ph-check" viewBox="0 0 24 24" aria-hidden="true" fill="none" stroke="currentColor" stroke-width="2.4" stroke-linecap="round" stroke-linecap="round" stroke-linejoin="round"><path d="M20 6 9 17l-5-5"/></svg>
+        </li>
+      </ol>
+
+      <section class="metrics" aria-label="النتائج" data-i18n-aria="aria.metrics">
+        <div class="metric" id="m-ping">
+          <div class="m-head">
+            <svg viewBox="0 0 24 24" aria-hidden="true" fill="none" stroke="currentColor" stroke-width="1.7" stroke-linecap="round" stroke-linejoin="round"><path d="M22 12h-4l-3 9L9 3l-3 9H2"/></svg>
+            <span data-i18n="m.ping">الاستجابة</span>
+          </div>
+          <div class="m-val"><span class="num">—</span><span class="unit">ms</span></div>
+        </div>
+        <div class="metric" id="m-jitter">
+          <div class="m-head">
+            <svg viewBox="0 0 24 24" aria-hidden="true" fill="none" stroke="currentColor" stroke-width="1.7" stroke-linecap="round"><path d="M2 12c1.7-2.6 3.3-2.6 5 0s3.3 2.6 5 0 3.3-2.6 5 0 3.3 2.6 5 0"/></svg>
+            <span data-i18n="m.jitter">التذبذب</span>
+          </div>
+          <div class="m-val"><span class="num">—</span><span class="unit">ms</span></div>
+        </div>
+        <div class="metric" id="m-loss">
+          <div class="m-head">
+            <svg viewBox="0 0 24 24" aria-hidden="true" fill="none" stroke="currentColor" stroke-width="1.7" stroke-linecap="round"><circle cx="12" cy="12" r="9"/><path d="m5.6 5.6 12.8 12.8"/></svg>
+            <span data-i18n="m.loss">فقدان الحزم</span>
+          </div>
+          <div class="m-val"><span class="num">—</span><span class="unit">%</span></div>
+        </div>
+        <div class="metric" id="m-download">
+          <div class="m-head">
+            <svg viewBox="0 0 24 24" aria-hidden="true" fill="none" stroke="currentColor" stroke-width="1.7" stroke-linecap="round" stroke-linejoin="round"><path d="M12 3v12m0 0 5-5m-5 5-5-5"/><path d="M5 21h14"/></svg>
+            <span data-i18n="m.download">التنزيل</span>
+          </div>
+          <div class="m-val"><span class="num">—</span><span class="unit">Mbps</span></div>
+        </div>
+        <div class="metric" id="m-upload">
+          <div class="m-head">
+            <svg viewBox="0 0 24 24" aria-hidden="true" fill="none" stroke="currentColor" stroke-width="1.7" stroke-linecap="round" stroke-linejoin="round"><path d="M12 21V9m0 0 5 5m-5-5-5 5"/><path d="M5 3h14"/></svg>
+            <span data-i18n="m.upload">الرفع</span>
+          </div>
+          <div class="m-val"><span class="num">—</span><span class="unit">Mbps</span></div>
+        </div>
+      </section>
+
+      <section class="actions" id="actions" aria-hidden="true">
+        <div class="menu-anchor">
+          <button class="btn" id="btn-share" type="button">
+            <svg viewBox="0 0 24 24" aria-hidden="true" fill="none" stroke="currentColor" stroke-width="1.7" stroke-linecap="round"><circle cx="18" cy="5" r="3"/><circle cx="6" cy="12" r="3"/><circle cx="18" cy="19" r="3"/><path d="m8.6 13.5 6.8 4M15.4 6.5l-6.8 4"/></svg>
+            <span data-i18n="a.share">مشاركة النتيجة</span>
+          </button>
+          <div class="menu" id="share-menu" hidden role="menu">
+            <button class="menu-item" id="mi-link" type="button" role="menuitem">
+              <svg viewBox="0 0 24 24" aria-hidden="true" fill="none" stroke="currentColor" stroke-width="1.7" stroke-linecap="round"><path d="M10 13a5 5 0 0 0 7.5.5l3-3a5 5 0 0 0-7-7l-1.7 1.7"/><path d="M14 11a5 5 0 0 0-7.5-.5l-3 3a5 5 0 0 0 7 7l1.7-1.7"/></svg>
+              <span data-i18n="sh.link">نسخ رابط النتيجة</span>
+            </button>
+            <button class="menu-item" id="mi-text" type="button" role="menuitem">
+              <svg viewBox="0 0 24 24" aria-hidden="true" fill="none" stroke="currentColor" stroke-width="1.7" stroke-linecap="round"><rect x="9" y="9" width="13" height="13" rx="2"/><path d="M5 15H4a2 2 0 0 1-2-2V4a2 2 0 0 1 2-2h9a2 2 0 0 1 2 2v1"/></svg>
+              <span data-i18n="sh.text">نسخ الملخص نصياً</span>
+            </button>
+            <button class="menu-item" id="mi-png" type="button" role="menuitem">
+              <svg viewBox="0 0 24 24" aria-hidden="true" fill="none" stroke="currentColor" stroke-width="1.7" stroke-linecap="round" stroke-linejoin="round"><rect x="3" y="3" width="18" height="18" rx="2"/><circle cx="9" cy="9" r="2"/><path d="m21 15-3.1-3.1a2 2 0 0 0-2.8 0L6 21"/></svg>
+              <span data-i18n="sh.png">حفظ كصورة PNG</span>
+            </button>
+            <button class="menu-item" id="mi-json" type="button" role="menuitem">
+              <svg viewBox="0 0 24 24" aria-hidden="true" fill="none" stroke="currentColor" stroke-width="1.7" stroke-linecap="round"><path d="M8 3H7a2 2 0 0 0-2 2v5a2 2 0 0 1-2 2 2 2 0 0 1 2 2v5c0 1.1.9 2 2 2h1"/><path d="M16 21h1a2 2 0 0 0 2-2v-5c0-1.1.9-2 2-2a2 2 0 0 1-2-2V5a2 2 0 0 0-2-2h-1"/></svg>
+              <span data-i18n="sh.json">تصدير JSON</span>
+            </button>
+            <button class="menu-item" id="mi-native" type="button" role="menuitem" hidden>
+              <svg viewBox="0 0 24 24" aria-hidden="true" fill="none" stroke="currentColor" stroke-width="1.7" stroke-linecap="round"><circle cx="18" cy="5" r="3"/><circle cx="6" cy="12" r="3"/><circle cx="18" cy="19" r="3"/><path d="m8.6 13.5 6.8 4M15.4 6.5l-6.8 4"/></svg>
+              <span data-i18n="sh.native">مشاركة عبر التطبيقات</span>
+            </button>
+          </div>
+        </div>
+        <button class="btn" id="btn-details" type="button">
+          <svg viewBox="0 0 24 24" aria-hidden="true" fill="none" stroke="currentColor" stroke-width="1.7" stroke-linecap="round"><path d="M3 3v18h18"/><path d="M18 17V9"/><path d="M13 17V5"/><path d="M8 17v-3"/></svg>
+          <span data-i18n="a.details">التفاصيل والإحصاءات</span>
+        </button>
+        <button class="btn btn-accent" id="btn-again" type="button">
+          <svg viewBox="0 0 24 24" aria-hidden="true" fill="none" stroke="currentColor" stroke-width="1.7" stroke-linecap="round" stroke-linejoin="round"><path d="M21 12a9 9 0 1 1-2.64-6.36L21 8"/><path d="M21 3v5h-5"/></svg>
+          <span data-i18n="a.again">إعادة الاختبار</span>
+        </button>
+      </section>
+    </main>
+
+    <!-- ═══ Footer ═══ -->
+    <footer class="foot">
+      <span data-i18n="f.tag">أداة مفتوحة المصدر لقياس سرعة الإنترنت</span>
+      <span class="foot-sep" aria-hidden="true">·</span>
+      <span data-i18n="f.dev">من تطوير</span>
+      <a href="https://spos.ly" target="_blank" rel="noopener">صولة للأنظمة SPOS</a>
+    </footer>
+  </div>
+
+  <!-- ═══ Drawers ═══ -->
+  <div class="scrim" id="scrim" hidden></div>
+
+  <aside class="drawer" id="dr-settings" role="dialog" aria-modal="true" aria-labelledby="drs-title" aria-hidden="true">
+    <div class="drawer-head">
+      <h2 id="drs-title" data-i18n="s.title">الإعدادات</h2>
+      <button class="icon-btn" data-close type="button" aria-label="إغلاق" data-i18n-aria="aria.close">
+        <svg viewBox="0 0 24 24" aria-hidden="true" fill="none" stroke="currentColor" stroke-width="1.7" stroke-linecap="round"><path d="M18 6 6 18M6 6l12 12"/></svg>
+      </button>
     </div>
-  </header>
-
-  <main id="main">
-    <!-- ===================== HERO / TEST ===================== -->
-    <section class="hero" id="test">
-      <div class="glow glow-a" aria-hidden="true"></div>
-      <div class="glow glow-b" aria-hidden="true"></div>
-      <div class="wrap">
-        <p class="eyebrow"><a href="https://spos.ly" target="_blank" rel="noopener" data-i18n="hero.eyebrow">أداة مفتوحة المصدر من صولة للأنظمة SPOS</a></p>
-        <h1 data-i18n="hero.title">اختبار <span class="grad">سرعة الإنترنت</span></h1>
-        <p class="lead" data-i18n="hero.lead">قياس فوري لسرعة التحميل والرفع، وزمن الاستجابة (Ping)، والتذبذب، وفقدان الحزم — مجاناً وبدون تسجيل، من أقرب خادم إليك عبر شبكة Cloudflare العالمية.</p>
-
-        <div class="test-shell glass">
-          <div class="gauge-zone">
-            <div class="gauge-wrap">
-              <svg id="gauge" viewBox="0 0 320 320" role="img" data-aria="a11y.gauge" aria-label="عداد سرعة الاتصال"></svg>
-              <div class="gauge-center">
-                <div id="gaugeIdle" class="gauge-idle">
-                  <img src="assets/img/logo.png" alt="شعار SPOS" width="72" height="107">
-                </div>
-                <div id="gaugeLive" class="gauge-live" hidden>
-                  <div class="gauge-value"><span id="speedVal">0.00</span><span class="gauge-unit">Mbps</span></div>
-                  <div class="gauge-phase" id="phaseLabel">&nbsp;</div>
-                </div>
-              </div>
-            </div>
-            <div class="gauge-side">
-              <ol class="steps" id="steps">
-                <li data-step="ping"><span class="dot" aria-hidden="true"></span><span data-i18n="phase.ping">زمن الاستجابة</span></li>
-                <li data-step="loss"><span class="dot" aria-hidden="true"></span><span data-i18n="phase.loss">فقدان الحزم</span></li>
-                <li data-step="down"><span class="dot" aria-hidden="true"></span><span data-i18n="phase.down">سرعة التحميل</span></li>
-                <li data-step="up"><span class="dot" aria-hidden="true"></span><span data-i18n="phase.up">سرعة الرفع</span></li>
-              </ol>
-              <button id="startBtn" class="start-btn" type="button">
-                <span class="start-ring" aria-hidden="true"></span>
-                <svg viewBox="0 0 24 24" width="30" height="30" fill="currentColor" aria-hidden="true"><path d="M8 5.6c0-1.2 1.3-2 2.4-1.3l9 5.4c1 .7 1 2.1 0 2.8l-9 5.4c-1.1.7-2.4-.1-2.4-1.3V5.6z"/></svg>
-                <span class="start-label" data-i18n="cta.start">ابدأ الاختبار</span>
-              </button>
-              <p class="test-note" data-i18n="hero.note">للحصول على أدق نتيجة: أوقف التنزيلات، واقترب من الراوتر أو استخدم كيبل، وأغلق النوافذ الأخرى.</p>
-            </div>
-          </div>
-
-          <canvas id="graph" class="graph" width="720" height="150" aria-hidden="true"></canvas>
-          <p class="sr-only" id="liveRegion" role="status" aria-live="polite"></p>
-          <div id="testError" class="test-error" hidden>
-            <p data-i18n="err.network">تعذر إتمام الاختبار — تحقق من اتصالك بالإنترنت ثم أعد المحاولة.</p>
-          </div>
-
-          <section id="results" class="results" hidden aria-labelledby="resultsTitle">
-            <h2 id="resultsTitle" class="sr-only" data-i18n="results.title">نتائج الاختبار</h2>
-            <div class="metrics-grid">
-              <article class="metric m-down">
-                <h3 data-i18n="metric.down">التحميل</h3>
-                <p class="m-value"><span id="rDown">—</span><small>Mbps</small></p>
-                <p class="m-grade" id="gDown"></p>
-              </article>
-              <article class="metric m-up">
-                <h3 data-i18n="metric.up">الرفع</h3>
-                <p class="m-value"><span id="rUp">—</span><small>Mbps</small></p>
-                <p class="m-grade" id="gUp"></p>
-              </article>
-              <article class="metric m-ping">
-                <h3 data-i18n="metric.ping">زمن الاستجابة</h3>
-                <p class="m-value"><span id="rPing">—</span><small>ms</small></p>
-                <p class="m-grade" id="gPing"></p>
-              </article>
-              <article class="metric m-jitter">
-                <h3 data-i18n="metric.jitter">التذبذب</h3>
-                <p class="m-value"><span id="rJitter">—</span><small>ms</small></p>
-                <p class="m-grade" id="gJitter"></p>
-              </article>
-              <article class="metric m-loss">
-                <h3 data-i18n="metric.loss">فقدان الحزم</h3>
-                <p class="m-value"><span id="rLoss">—</span><small>%</small></p>
-                <p class="m-grade" id="gLoss"></p>
-              </article>
-              <article class="metric m-loaded">
-                <h3 data-i18n="metric.loaded">زمن الاستجابة أثناء الحمل</h3>
-                <p class="m-value"><span id="rLoaded">—</span><small>ms</small></p>
-                <p class="m-grade" id="gLoaded"></p>
-              </article>
-            </div>
-
-            <p class="verdict" id="verdict"></p>
-            <div class="chips" id="suitability" aria-label=" "></div>
-
-            <div class="conn glass">
-              <h3 data-i18n="conn.title">تفاصيل الاتصال</h3>
-              <dl class="conn-grid">
-                <div><dt data-i18n="conn.ip">عنوان IP</dt><dd id="cIp">—</dd></div>
-                <div><dt data-i18n="conn.isp">مزود الخدمة</dt><dd id="cIsp">—</dd></div>
-                <div><dt data-i18n="conn.server">خادم القياس</dt><dd id="cServer">—</dd></div>
-                <div><dt data-i18n="conn.proto">البروتوكول</dt><dd id="cProto">—</dd></div>
-              </dl>
-            </div>
-
-            <div class="share-row">
-              <button class="btn btn-primary" id="btnAgain" type="button" data-i18n="cta.again">إعادة الاختبار</button>
-              <button class="btn" id="btnShare" type="button">
-                <svg viewBox="0 0 24 24" width="18" height="18" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M4 12v7a1.5 1.5 0 0 0 1.5 1.5h13A1.5 1.5 0 0 0 20 19v-7M12 15V3.5M8 7l4-3.5L16 7"/></svg>
-                <span data-i18n="cta.share">مشاركة النتيجة</span>
-              </button>
-              <button class="btn" id="btnCopy" type="button" data-i18n="cta.copy">نسخ النتيجة</button>
-            </div>
-          </section>
-        </div>
-
-        <section id="history" class="history" aria-labelledby="historyTitle">
-          <div class="history-head">
-            <h2 id="historyTitle" data-i18n="hist.title">سجل اختباراتك</h2>
-            <button class="btn btn-ghost" id="btnClearHist" type="button" data-i18n="hist.clear">حذف السجل</button>
-          </div>
-          <p class="hist-note" data-i18n="hist.note">تُحفظ النتائج محلياً في متصفحك فقط ولا تُرسل إلى أي خادم.</p>
-          <div class="table-wrap">
-            <table id="histTable">
-              <thead>
-                <tr>
-                  <th data-i18n="hist.when">التاريخ والوقت</th>
-                  <th data-i18n="metric.down">التحميل</th>
-                  <th data-i18n="metric.up">الرفع</th>
-                  <th data-i18n="metric.ping">زمن الاستجابة</th>
-                  <th data-i18n="metric.loss">فقدان الحزم</th>
-                </tr>
-              </thead>
-              <tbody id="histBody"></tbody>
-            </table>
-          </div>
-          <p class="hist-empty" id="histEmpty" data-i18n="hist.empty">لا توجد اختبارات سابقة بعد — ابدأ أول قياس لك الآن.</p>
-        </section>
-      </div>
-    </section>
-
-    <!-- ===================== HOW IT WORKS ===================== -->
-    <section class="section" id="how">
-      <div class="wrap">
-        <h2 data-i18n="how.title">كيف يعمل الاختبار؟</h2>
-        <p class="section-lead" data-i18n="how.lead">شفافية كاملة في المنهجية — كل القياسات تتم داخل متصفحك عبر نقاط قياس عامة مفتوحة، دون أي برامج وسيطة.</p>
-        <div class="cards-3">
-          <article class="card glass">
-            <span class="card-num">1</span>
-            <h3 data-i18n="how.s1t">اتصال بأقرب خادم</h3>
-            <p data-i18n="how.s1d">يعمل SPOS Net فوق شبكة Cloudflare العالمية المنتشرة في أكثر من 330 مدينة، فيصل طلبك تلقائياً إلى أقرب نقطة قياس ليعكس ذلك أداء اتصالك الفعلي بأقرب مركز بيانات.</p>
-          </article>
-          <article class="card glass">
-            <span class="card-num">2</span>
-            <h3 data-i18n="how.s2t">قياسات متتالية متعددة الاتصالات</h3>
-            <p data-i18n="how.s2d">تُقاس الاستجابة والتذبذب عبر طلبات صغيرة متتالية، ثم يُفتح عدة اتصالات متوازية للتحميل والرفع مع تكيف حجم البيانات مع سرعتك، لقياس أقصى قدرة فعلية للخط.</p>
-          </article>
-          <article class="card glass">
-            <span class="card-num">3</span>
-            <h3 data-i18n="how.s3t">تقييم واضح لنتيجتك</h3>
-            <p data-i18n="how.s3d">تحصل على النتائج الأساسية: التحميل، الرفع، البنق، التذبذب، فقدان الحزم، وزمن الاستجابة أثناء الحمل، مع تقييم فوري لجاهزية اتصالك لكل نشاط رقمي.</p>
-          </article>
-        </div>
-        <p class="method-note" data-i18n="how.note">ملاحظة منهجية: نظراً لقيود المتصفحات، يُقاس فقدان الحزم تقديرياً عبر فشل طلبات HTTP صغيرة متعددة وليس عبر ICMP، لذا تعكس النتيجة المؤشرات الحادة لفقدان الحزم أثناء الاختبار.</p>
-      </div>
-    </section>
-
-    <!-- ===================== GUIDE ===================== -->
-    <section class="section section-alt" id="guide">
-      <div class="wrap">
-        <h2 data-i18n="guide.title">افهم نتائجك</h2>
-        <p class="section-lead" data-i18n="guide.lead">ماذا تعني كل قراءة، وما القيم الجيدة التي يُنصح بها لكل نشاط؟</p>
-        <div class="cards-3">
-          <article class="card glass">
-            <h3 data-i18n="guide.d1t">سرعة التحميل (Download)</h3>
-            <p data-i18n="guide.d1d">سرعة جلب البيانات من الإنترنت إلى جهازك، وتقاس بالميغابت في الثانية (Mbps). عليها يعتمد مشاهدة الفيديو وتحميل الملفات والتصفح.</p>
-          </article>
-          <article class="card glass">
-            <h3 data-i18n="guide.d2t">سرعة الرفع (Upload)</h3>
-            <p data-i18n="guide.d2d">سرعة إرسال البيانات من جهازك إلى الإنترنت، وأهميتها في المكالمات المرئية والبث المباشر ورفع الملفات والعمل السحابي.</p>
-          </article>
-          <article class="card glass">
-            <h3 data-i18n="guide.d3t">زمن الاستجابة (Ping)</h3>
-            <p data-i18n="guide.d3d">الوقت بالمللي ثانية الذي يستغرقه طلب صغير للوصول إلى الخادم والعودة. القيم تحت 30ms ممتازة، وتحت 60ms جيدة جداً للألعاب.</p>
-          </article>
-          <article class="card glass">
-            <h3 data-i18n="guide.d4t">التذبذب (Jitter)</h3>
-            <p data-i18n="guide.d4d">تفاوت زمن الاستجابة بين الطلبات المتتالية. التذبذب المنخفض (أقل من 15ms) يعني اتصالاً مستقراً بلا تقطيع في المكالمات.</p>
-          </article>
-          <article class="card glass">
-            <h3 data-i18n="guide.d5t">فقدان الحزم (Packet Loss)</h3>
-            <p data-i18n="guide.d5d">نسبة الحزم التي لا تصل إلى وجهتها. المثالي 0%، وأي قيمة فوق 1-2% تسبب مشاكل ملحوظة في الاتصالات الفورية.</p>
-          </article>
-          <article class="card glass">
-            <h3 data-i18n="guide.d6t">الاستجابة أثناء الحمل</h3>
-            <p data-i18n="guide.d6d">زمن الاستجابة أثناء إشباع الخط بالتحميل أو الرفع؛ ارتفاعه الكبير عن القيمة الأساسية يشير إلى ازدحام في الشبكة (Bufferbloat).</p>
-          </article>
-        </div>
-
-        <h3 class="tbl-title" data-i18n="guide.tblTitle">السرعات الموصى بها لكل نشاط</h3>
-        <div class="table-wrap">
-          <table class="req-table">
-            <thead>
-              <tr>
-                <th data-i18n="guide.tblActivity">النشاط</th>
-                <th data-i18n="guide.tblDown">التحميل (Mbps)</th>
-                <th data-i18n="guide.tblUp">الرفع (Mbps)</th>
-                <th data-i18n="guide.tblNote">ملاحظات</th>
-              </tr>
-            </thead>
-            <tbody id="reqTable"></tbody>
-          </table>
+    <div class="drawer-body">
+      <div class="set-group">
+        <div class="set-label" data-i18n="s.language">اللغة</div>
+        <div class="seg" data-setting="lang" role="radiogroup">
+          <button type="button" data-val="ar" role="radio">العربية</button>
+          <button type="button" data-val="en" role="radio">English</button>
         </div>
       </div>
-    </section>
-
-    <!-- ===================== FAQ ===================== -->
-    <section class="section" id="faq">
-      <div class="wrap wrap-narrow">
-        <h2 data-i18n="faq.title">الأسئلة الشائعة</h2>
-        <p class="section-lead" data-i18n="faq.lead">إجابات مباشرة عن أكثر ما يُسأل حول قياس سرعة الإنترنت.</p>
-        <details class="faq-item glass">
-          <summary data-i18n="faq.q1">كيف يعمل اختبار السرعة في SPOS Net؟</summary>
-          <p data-i18n="faq.a1">يُجري SPOS Net سلسلة من القياسات داخل متصفحك مباشرة: أولاً يرسل عدة طلبات صغيرة لقياس زمن الاستجابة (Ping) والتذبذب (Jitter)، ثم يفتح عدة اتصالات متوازية لتنزيل بيانات من أقرب نقطة شبكة (Edge) إليك عبر شبكة Cloudflare لقياس سرعة التحميل، ويرفع بيانات لقياس سرعة الرفع، وأخيراً يرسل مجموعات من الطلبات الصغيرة لحساب نسبة فقدان الحزم التقديرية. لا يحتاج الموقع إلى أي إضافات أو برامج خارجية.</p>
-        </details>
-        <details class="faq-item glass">
-          <summary data-i18n="faq.q2">ما هي سرعة الإنترنت الجيدة؟</summary>
-          <p data-i18n="faq.a2">تعتمد على استخدامك: للتصفح ومواقع التواصل تكفي سرعة تحميل 10 ميغابت/ثانية، لبث الفيديو بدقة HD يُنصح بـ 10 ميغابت/ثانية، ولبدقة 4K تحتاج 35 ميغابت/ثانية على الأقل، أما الألعاب التنافسية فالأهم فيها زمن الاستجابة (أقل من 60 مللي ثانية) وفقدان حزم منخفض أكثر من سرعة التحميل.</p>
-        </details>
-        <details class="faq-item glass">
-          <summary data-i18n="faq.q3">ما هو زمن الاستجابة (Ping) وما هو التذبذب (Jitter)؟</summary>
-          <p data-i18n="faq.a3">زمن الاستجابة هو الوقت الذي يستغرقه طلب صغير للذهاب إلى الخادم والعودة ويقاس بالمللي ثانية؛ كلما انخفض كان الاتصال أكثر استجابة، وهو عامل حاسم في الألعاب والمكالمات. أما التذبذب فهو تفاوت زمن الاستجابة بين الطلبات المتتالية، والتذبذب المرتفع يسبب تقطعاً في المكالمات والفيديو حتى لو كان زمن الاستجابة جيداً.</p>
-        </details>
-        <details class="faq-item glass">
-          <summary data-i18n="faq.q4">ما هو فقدان الحزم (Packet Loss)؟</summary>
-          <p data-i18n="faq.a4">فقدان الحزم يعني ضياع جزء من حزم البيانات أثناء انتقالها بين جهازك والخادم، وتسببه عادة مشاكل في الشبكة المحلية (واي فاي ضعيف) أو ازدحام لدى مزود الخدمة. النسب فوق 1% تسبب تقطعاً ملحوظاً في المكالمات والألعاب. ولأن المتصفحات لا تستطيع إرسال ICMP، يقيسه SPOS Net تقديرياً عبر فشل أو انتهاء مهلة طلبات HTTP صغيرة متعددة.</p>
-        </details>
-        <details class="faq-item glass">
-          <summary data-i18n="faq.q5">لماذا تختلف النتيجة عن أدوات أخرى مثل Speedtest أو Fast.com؟</summary>
-          <p data-i18n="faq.a5">الاختلاف طبيعي وأسبابه: خوادم مختلفة في مواقع جغرافية وبأحمال مختلفة، توقيت مختلف للاختبار، بروتوكولات مختلفة (HTTP/2 مقابل HTTP/3)، طريقة الاتصال (واي فاي مقابل كيبل)، وحالة الشبكة لحظة القياس. الأفضل إجراء الاختبار عدة مرات في أوقات مختلفة والاعتماد على المتوسط، مع إغلاق التطبيقات التي تستهلك الاتصال أثناء القياس.</p>
-        </details>
-        <details class="faq-item glass">
-          <summary data-i18n="faq.q6">هل الأداة مجانية؟ وهل يتم جمع بياناتي؟</summary>
-          <p data-i18n="faq.a6">SPOS Net مجاني تماماً، بدون إعلانات وبدون تسجيل وبدون تتبع. لا تُرسل نتائجك إلى أي خادم يخصنا؛ سجل اختباراتك محفوظ محلياً في متصفحك فقط ويمكنك حذفه في أي وقت. تُجرى القياسات عبر شبكة Cloudflare العامة التي ترى عنوان IP الخاص بك لتوجيه الطلب فقط.</p>
-        </details>
-        <details class="faq-item glass">
-          <summary data-i18n="faq.q7">هل يعمل SPOS Net على الجوال؟</summary>
-          <p data-i18n="faq.a7">نعم، الموقع متجاوب مع كل المقاسات ويعمل على متصفحات الجوال والحاسوب، ويمكن تثبيته كتطبيق (PWA) من قائمة المتصفح ليظهر كتطبيق مستقل على جهازك.</p>
-        </details>
-      </div>
-    </section>
-
-    <!-- ===================== ABOUT / PROMO ===================== -->
-    <section class="section section-alt" id="about">
-      <div class="wrap">
-        <div class="about-card glass">
-          <div class="about-logo">
-            <img src="assets/img/logo.png" alt="شعار صولة للأنظمة SPOS" width="90" height="134" loading="lazy">
-          </div>
-          <div class="about-body">
-            <h2 data-i18n="about.title">من وراء SPOS Net؟</h2>
-            <p data-i18n="about.p1">SPOS Net مشروع مفتوح المصدر تطوره <strong>صولة للأنظمة (SPOS)</strong> — نشاط ليبوي متخصص في بناء الحلول البرمجية المتكاملة: تطبيقات الويب والجوال، الأنظمة الإدارية، والحلول التقنية المخصصة، من الفكرة إلى الإطلاق.</p>
-            <p data-i18n="about.p2">أردنا أداة قياس عربية سريعة وصادقة بلا إعلانات ولا تتبع، فبنيناها وأهديناها للجميع تحت رخصة MIT.</p>
-            <div class="about-actions">
-              <a class="btn btn-primary" href="https://spos.ly" target="_blank" rel="noopener" data-i18n="about.site">زيارة موقع صولة للأنظمة</a>
-              <a class="btn" href="https://wa.me/218935535606" target="_blank" rel="noopener" data-i18n="about.whatsapp">تواصل عبر واتساب</a>
-              <a class="btn" href="tel:+218935535606" data-i18n="about.call">اتصل بنا</a>
-              <a class="btn btn-ghost" href="https://github.com/spos-systems/SPOS-Net" target="_blank" rel="noopener" data-i18n="about.source">الكود المصدري على GitHub</a>
-            </div>
-          </div>
+      <div class="set-group">
+        <div class="set-label" data-i18n="s.unit">وحدة العرض</div>
+        <div class="seg" data-setting="unit" role="radiogroup">
+          <button type="button" data-val="mbps" role="radio">Mbps</button>
+          <button type="button" data-val="mbytes" role="radio">MB/s</button>
+          <button type="button" data-val="kbps" role="radio">kbps</button>
         </div>
       </div>
-    </section>
-  </main>
-
-  <footer class="site-footer">
-    <div class="wrap footer-grid">
-      <div class="f-brand">
-        <img src="assets/img/favicon-64.png" alt="" width="40" height="40" loading="lazy">
+      <div class="set-group">
+        <div class="set-label"><span data-i18n="s.duration">مدة كل مرحلة</span></div>
+        <div class="seg" data-setting="duration" role="radiogroup">
+          <button type="button" data-val="8" role="radio"><span data-i18n="s.d1">سريع</span><small>8s</small></button>
+          <button type="button" data-val="12" role="radio"><span data-i18n="s.d2">قياسي</span><small>12s</small></button>
+          <button type="button" data-val="20" role="radio"><span data-i18n="s.d3">موسّع</span><small>20s</small></button>
+        </div>
+      </div>
+      <div class="set-group">
+        <div class="set-label"><span data-i18n="s.streams">الاتصالات المتوازية</span></div>
+        <div class="seg" data-setting="streams" role="radiogroup">
+          <button type="button" data-val="1" role="radio">1</button>
+          <button type="button" data-val="4" role="radio">4</button>
+          <button type="button" data-val="8" role="radio">8</button>
+          <button type="button" data-val="16" role="radio">16</button>
+        </div>
+        <p class="set-hint" data-i18n="s.streamsHint">عدد الاتصالات المتزامنة أثناء التنزيل والرفع — قيمة أعلى تعبئة أوسع للشبكة، وقيمة أقل أقرب لسلوك الاستخدام الفردي.</p>
+      </div>
+      <div class="set-group set-row">
         <div>
-          <p class="f-name">SPOS Net</p>
-          <p class="f-tag" data-i18n="footer.tagline">أداة قياس سرعة إنترنت مفتوحة المصدر — بدون إعلانات، بدون تتبع.</p>
+          <div class="set-label" data-i18n="s.loaded">قياس الاستجابة أثناء الحمل</div>
+          <p class="set-hint" data-i18n="s.loadedHint">عينات إضافية لزمن الاستجابة أثناء إشغال الخط بالتنزيل والرفع (Bufferbloat).</p>
         </div>
+        <button class="switch" type="button" data-setting="loaded" role="switch" aria-checked="true"><i></i></button>
       </div>
-      <nav class="f-col" aria-labelledby="fLinks">
-        <h3 id="fLinks" data-i18n="footer.links">روابط سريعة</h3>
-        <a href="#test" data-i18n="footer.l1">اختبار السرعة</a>
-        <a href="#how" data-i18n="footer.l2">كيف يعمل</a>
-        <a href="#guide" data-i18n="footer.l3">افهم نتائجك</a>
-        <a href="#faq" data-i18n="footer.l4">الأسئلة الشائعة</a>
-      </nav>
-      <div class="f-col" aria-labelledby="fContact">
-        <h3 id="fContact">صولة للأنظمة SPOS</h3>
-        <a href="https://spos.ly" target="_blank" rel="noopener">spos.ly</a>
-        <a href="https://wa.me/218935535606" target="_blank" rel="noopener" data-i18n="footer.whatsapp">واتساب: 0935535606</a>
-        <a href="tel:+218935535606" dir="ltr">+218 93 553 5606</a>
-        <a href="https://github.com/spos-systems" target="_blank" rel="noopener">GitHub: spos-systems</a>
+      <div class="set-group set-row">
+        <div>
+          <div class="set-label" data-i18n="s.loss">اختبار فقدان الحزم</div>
+          <p class="set-hint" data-i18n="s.lossHint">إرسال دفعة طلبات قصيرة لحساب نسبة الفشل التقديرية للحزم.</p>
+        </div>
+        <button class="switch" type="button" data-setting="loss" role="switch" aria-checked="true"><i></i></button>
+      </div>
+      <p class="set-note" id="set-note" hidden data-i18n="s.applies">سيُطبَّق التغيير في الاختبار القادم</p>
+      <button class="btn btn-ghost" id="btn-reset" type="button" data-i18n="s.reset">استعادة الافتراضي</button>
+      <div class="about-block">
+        <div class="set-label" data-i18n="s.how">كيف نقيس؟</div>
+        <p data-i18n="s.howBody">يُجرى القياس عبر طلبات HTTP متوازية إلى أقرب نقطة Cloudflare، مع استبعاد مرحلة التسارع الأولى وحساب المتوسط على النافذة المستقرة، وقياس الاستجابة من زمن أول بايت.</p>
+        <p class="about-credit">SPOS Net v2.0.0 · <a href="https://spos.ly" target="_blank" rel="noopener">SPOS — صولة للأنظمة</a></p>
       </div>
     </div>
-    <div class="wrap f-bottom">
-      <p><span data-i18n="footer.rights">© 2026 صولة للأنظمة SPOS — جميع الحقوق محفوظة</span> · <a href="https://github.com/spos-systems/SPOS-Net/blob/main/LICENSE" target="_blank" rel="noopener">MIT License</a></p>
-    </div>
-  </footer>
+  </aside>
 
-  <noscript>
-    <div class="noscript-box" dir="rtl">
-      <p>SPOS Net يحتاج إلى تشغيل JavaScript لإجراء القياسات. فضلاً فعّل JavaScript في متصفحك ثم أعد تحميل الصفحة.</p>
+  <aside class="drawer" id="dr-details" role="dialog" aria-modal="true" aria-labelledby="drd-title" aria-hidden="true">
+    <div class="drawer-head">
+      <h2 id="drd-title" data-i18n="d.title">التفاصيل والإحصاءات</h2>
+      <button class="icon-btn" data-close type="button" aria-label="إغلاق" data-i18n-aria="aria.close">
+        <svg viewBox="0 0 24 24" aria-hidden="true" fill="none" stroke="currentColor" stroke-width="1.7" stroke-linecap="round"><path d="M18 6 6 18M6 6l12 12"/></svg>
+      </button>
     </div>
-  </noscript>
+    <div class="drawer-body" id="details-body"><!-- built by JS --></div>
+  </aside>
 
-  <script src="assets/js/i18n.js"></script>
-  <script src="assets/js/engine.js"></script>
-  <script src="assets/js/gauge.js"></script>
-  <script src="assets/js/app.js"></script>
+  <div class="toast" id="toast" role="status" aria-live="polite" hidden></div>
+
+  <noscript><div class="nojs">يتطلب SPOS Net تفعيل JavaScript لتشغيل اختبار السرعة. — SPOS Net requires JavaScript to run the speed test.</div></noscript>
+
+  <script type="module" src="assets/js/app.js"></script>
 </body>
 </html>

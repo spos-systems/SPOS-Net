@@ -3,33 +3,27 @@
 <head>
   <meta charset="utf-8">
   <meta name="viewport" content="width=device-width, initial-scale=1">
-  <title>الصفحة غير موجودة | SPOS Net</title>
+  <title>الصفحة غير موجودة — SPOS Net</title>
   <meta name="robots" content="noindex">
-  <link rel="icon" href="assets/img/favicon-32.png">
   <style>
+    html { background: #090b11; }
     body {
-      margin: 0; min-height: 100vh; display: grid; place-items: center;
-      background: linear-gradient(180deg, #050a13, #071120);
-      color: #e9f3ff; font-family: 'Cairo', 'Segoe UI', Tahoma, Arial, sans-serif;
+      margin: 0; min-height: 100vh; display: flex; align-items: center; justify-content: center;
+      font-family: system-ui, "Segoe UI", sans-serif; color: #9aa4b8; background: #090b11;
       text-align: center; padding: 24px;
     }
-    .code { font-size: 5rem; font-weight: 900; margin: 0;
-      background: linear-gradient(120deg, #2dd4ff, #1890d8 55%, #0060a8);
-      -webkit-background-clip: text; background-clip: text;
-      -webkit-text-fill-color: transparent; }
-    a.btn {
-      display: inline-block; margin-top: 18px; padding: 12px 30px; border-radius: 13px;
-      background: linear-gradient(145deg, #30a8f0, #1890d8 60%, #0060a8);
-      color: #fff; font-weight: 800; text-decoration: none;
-    }
+    .box a { color: #4f9df0; text-decoration: none; }
+    h1 { color: #e9edf5; font-size: 22px; margin: 0 0 10px; font-weight: 600; }
+    p { margin: 6px 0; font-size: 15px; line-height: 1.7; }
   </style>
 </head>
 <body>
-  <div>
-    <p class="code">404</p>
-    <p style="font-size:1.2rem;font-weight:700">هذه الصفحة غير موجودة</p>
-    <p style="color:#93b0d4">يبدو أن الرابط الذي تبحث عنه قد تغير أو لم يعد متوفراً.</p>
-    <a class="btn" href="./">العودة إلى اختبار السرعة</a>
+  <div class="box">
+    <h1>404</h1>
+    <p>هذه الصفحة غير موجودة.</p>
+    <p><a href="https://spos-systems.github.io/SPOS-Net/">العودة إلى اختبار السرعة</a></p>
+    <p dir="ltr"><a href="https://spos-systems.github.io/SPOS-Net/">Back to the speed test</a></p>
   </div>
+  <script>setTimeout(function () { location.replace('https://spos-systems.github.io/SPOS-Net/'); }, 2500);</script>
 </body>
 </html>

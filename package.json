@@ -1,0 +1,12 @@
+{
+  "name": "spos-net",
+  "version": "2.0.0",
+  "private": true,
+  "type": "module",
+  "description": "SPOS Net — open-source internet speed test (static site, zero dependencies). https://spos-systems.github.io/SPOS-Net/",
+  "license": "MIT",
+  "repository": {
+    "type": "git",
+    "url": "https://github.com/spos-systems/SPOS-Net"
+  }
+}
