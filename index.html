@@ -45,10 +45,11 @@
   <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
   <meta name="apple-mobile-web-app-title" content="SPOS Net">
   <link rel="manifest" href="manifest.webmanifest">
-  <link rel="preload" as="font" type="font/woff2" crossorigin href="assets/fonts/readex-pro-arabic-var.woff2">
-  <link rel="preload" as="font" type="font/woff2" crossorigin href="assets/fonts/readex-pro-latin-var.woff2">
-  <link rel="stylesheet" href="assets/css/fonts.css?v=4">
-  <link rel="stylesheet" href="assets/css/style.css?v=4">
+  <link rel="preload" as="font" type="font/woff2" crossorigin href="assets/fonts/plex-arabic-400-v5.woff2">
+  <link rel="preload" as="font" type="font/woff2" crossorigin href="assets/fonts/plex-arabic-600-v5.woff2">
+  <link rel="preload" as="font" type="font/woff2" crossorigin href="assets/fonts/plex-latin-700-v5.woff2">
+  <link rel="stylesheet" href="assets/css/fonts.css?v=5">
+  <link rel="stylesheet" href="assets/css/style.css?v=5">
 
   <script type="application/ld+json">
   {
@@ -148,7 +149,7 @@
       <div class="brand" aria-label="SPOS Net">
         <svg class="brand-mark" viewBox="0 0 64 64" aria-hidden="true">
           <rect x="3" y="3" width="58" height="58" rx="15" fill="#0f141f" stroke="#232c3f"/>
-          <path d="M 18.57 45.43 A 19 19 0 1 1 45.43 45.43" fill="none" stroke="#38bdf8" stroke-width="6" stroke-linecap="round"/>
+          <path d="M 18.57 45.43 A 19 19 0 1 1 45.43 45.43" fill="none" stroke="#22d3ee" stroke-width="6" stroke-linecap="round"/>
           <line x1="32" y1="32" x2="36.4" y2="16.9" stroke="#e9edf5" stroke-width="4" stroke-linecap="round"/>
           <circle cx="32" cy="32" r="3" fill="#e9edf5"/>
         </svg>
@@ -317,12 +318,14 @@
       <div class="foot-side">
         <svg class="foot-mark" viewBox="0 0 64 64" aria-hidden="true">
             <rect x="3" y="3" width="58" height="58" rx="15" fill="#0f141f" stroke="#232c3f"/>
-            <path d="M 18.57 45.43 A 19 19 0 1 1 45.43 45.43" fill="none" stroke="#38bdf8" stroke-width="6" stroke-linecap="round"/>
+            <path d="M 18.57 45.43 A 19 19 0 1 1 45.43 45.43" fill="none" stroke="#22d3ee" stroke-width="6" stroke-linecap="round"/>
             <line x1="32" y1="32" x2="36.4" y2="16.9" stroke="#e9edf5" stroke-width="4" stroke-linecap="round"/>
             <circle cx="32" cy="32" r="3" fill="#e9edf5"/>
           </svg>
         <span data-i18n="f.tag">أداة مفتوحة المصدر لقياس سرعة الإنترنت</span>
       </div>
+      <span class="foot-sep" aria-hidden="true"></span>
+      <span class="foot-font" id="foot-font" title="IBM Plex Sans Arabic" lang="en">IBM Plex Sans Arabic</span>
       <span class="foot-sep" aria-hidden="true"></span>
       <a class="foot-credit" href="https://spos.ly" target="_blank" rel="noopener">
         <span data-i18n="f.dev">من تطوير</span>
@@ -407,7 +410,7 @@
         <p data-i18n="s.howBody">يعمل التنزيل والرفع بتدفقات متوازية موزَّعة على عدة اتصالات TCP مستقلة، مع استبعاد مرحلة التسارع، ثم حساب النتيجة بالمنهجية المعتمدة في Speedtest: ترتيب العينات واستبعاد الأبطأ وحذف أسرع عينتين ومتوسط الباقي.</p>
         <div class="set-label" style="margin-top:14px" data-i18n="s.whyDiff">لماذا قد تختلف النتيجة عن تطبيقات أخرى؟</div>
         <p data-i18n="s.whyDiffBody">اعتمدنا في الإصدار 2.3 منهجية Speedtest.net نفسها في حساب النتيجة النهائية، لذا يجب أن تتطابق القراءات تقريباً. الفروقات الصغيرة (±10%) طبيعية بين أي أداتين، والكبيرة تعني غالباً اختلاف المسار أو ازدحام لحظي.</p>
-        <p class="about-credit"><span id="ver-tag">SPOS Net v4.0.0</span> · <a href="https://spos.ly" target="_blank" rel="noopener">SPOS — صولة للأنظمة</a></p>
+        <p class="about-credit"><span id="ver-tag">SPOS Net v5.0.0</span> · <span id="font-tag">…</span> · <a href="https://spos.ly" target="_blank" rel="noopener">SPOS — صولة للأنظمة</a></p>
       </div>
     </div>
   </aside>
@@ -513,6 +516,6 @@
 
   <noscript><div class="nojs">يتطلب SPOS Net تفعيل JavaScript لتشغيل اختبار السرعة. — SPOS Net requires JavaScript to run the speed test.</div></noscript>
 
-  <script type="module" src="assets/js/app.js?v=4"></script>
+  <script type="module" src="assets/js/app.js?v=5"></script>
 </body>
 </html>

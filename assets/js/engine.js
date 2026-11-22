@@ -21,7 +21,14 @@
  *   4. Deadline enforcement: in-flight transfers are aborted exactly at
  *      the phase deadline (v2.2 could overrun by minutes on slow links).
  *   5. Latency = TTFB of empty downloads (median, min kept for details);
- *      jitter = mean consecutive delta; loss = failed probes / sent.
+ *      jitter = mean consecutive delta.
+ *   6. Packet loss (v5 estimator): browsers cannot send ICMP/UDP, so a
+ *      pure timeout counter over TCP reads 0.0% on every healthy link.
+ *      We now count HARD losses (probe timeouts) plus RETRANSMISSION
+ *      indicators — probes that succeed but take > max(3× median,
+ *      median + 250 ms), which is the classic signature of a packet
+ *      that was lost and re-sent at the TCP layer. The figure is
+ *      labelled “estimated” in the UI, as before.
  */
 
 const BASE = 'https://speed.cloudflare.com';
@@ -339,16 +346,26 @@ export class Engine {
 
   async #lossBurst(res, signal) {
     let sent = 0, lost = 0, index = 0;
+    const rtts = [];
     const worker = async () => {
       while (index < LOSS_PROBES && !signal.aborted) {
         index++;
         sent++;
-        try { await this.#probe(signal, LOSS_TIMEOUT); }
+        try { rtts.push(await this.#probe(signal, LOSS_TIMEOUT)); }
         catch { if (signal.aborted) return; lost++; }
       }
     };
     await Promise.all(Array.from({ length: LOSS_CONCURRENCY }, worker));
-    res.loss = { sent, lost, pct: sent ? (lost / sent) * 100 : null };
+    /* retransmission indicators: successes far above the baseline */
+    const base = rtts.length ? median(rtts) : 0;
+    const spikeAt = Math.max(base * 3, base + 250);
+    const spikes = rtts.filter((r) => r > spikeAt).length;
+    const events = lost + spikes;
+    res.loss = {
+      sent, lost, spikes,
+      pct: sent ? Math.round((events / sent) * 1000) / 10 : null, /* 1 decimal */
+      est: true,
+    };
   }
 
   /* ── throughput phase ────────────────────────────────────── */

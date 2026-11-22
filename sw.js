@@ -1,28 +1,39 @@
-/* SPOS Net v2.2 service worker — installable PWA with offline app shell.
+/* SPOS Net v5 service worker — installable PWA with offline app shell.
  *
- * Strategy:
- *   • Precache the app shell (HTML, CSS, JS, icons, logo, manifest).
- *   • Same-origin GET assets: stale-while-revalidate — instant opens, updates
- *     arrive in the background on the next visit.
- *   • Cross-origin requests (the Cloudflare measurement endpoints, fonts CDN,
- *     RIPEstat, API calls) are never intercepted — they must hit the network.
- *   • Legacy caches are purged on activate.
+ * Strategy (v5 — "updates land on the first visit"):
+ *   • Precache the app shell (HTML, CSS, JS, fonts, icons, manifest).
+ *   • Navigations AND code assets (CSS/JS): NETWORK-FIRST — a fresh
+ *     deploy is what the user sees on the very next visit, cache is
+ *     only the offline fallback. (v4 served stale-while-revalidate for
+ *     code, which could show yesterday's design/font for a visit.)
+ *   • Fonts & images: cache-first — they are version-stamped file names
+ *     (-v5), so a hit is always the current version and the URL space
+ *     changes with every release. No stale font can ever be served.
+ *   • Cross-origin requests (Cloudflare measurement endpoints, RIPEstat,
+ *     APIs) are never intercepted.
+ *   • All caches from older versions are purged on activate.
  */
-const VERSION = 'sposnet-v4.0.0';
+const VERSION = 'sposnet-v5.0.0';
 
 const SHELL = [
   './',
   './index.html',
   './manifest.webmanifest',
   './404.html',
-  './assets/css/fonts.css?v=4',
-  './assets/css/style.css?v=4',
-  './assets/js/app.js?v=4',
+  './assets/css/fonts.css?v=5',
+  './assets/css/style.css?v=5',
+  './assets/js/app.js?v=5',
   './assets/js/engine.js',
   './assets/js/gauge.js',
   './assets/js/i18n.js',
-  './assets/fonts/readex-pro-arabic-var.woff2',
-  './assets/fonts/readex-pro-latin-var.woff2',
+  './assets/fonts/plex-arabic-400-v5.woff2',
+  './assets/fonts/plex-arabic-500-v5.woff2',
+  './assets/fonts/plex-arabic-600-v5.woff2',
+  './assets/fonts/plex-arabic-700-v5.woff2',
+  './assets/fonts/plex-latin-400-v5.woff2',
+  './assets/fonts/plex-latin-500-v5.woff2',
+  './assets/fonts/plex-latin-600-v5.woff2',
+  './assets/fonts/plex-latin-700-v5.woff2',
   './assets/img/company-logo.png',
   './assets/img/favicon.svg',
   './assets/img/favicon-32.png',
@@ -59,21 +70,30 @@ self.addEventListener('fetch', (event) => {
   if (url.origin !== location.origin) return;          /* never touch measurement traffic */
   if (url.pathname.includes('/assets/testdata/')) return;  /* 16 MB test payload — network only, never cached */
 
-  /* navigations: network-first so updates land, cache fallback offline */
-  if (req.mode === 'navigate') {
+  /* network-first: navigations and code (css/js) — fresh deploy wins,
+     cache only keeps the app usable offline */
+  if (req.mode === 'navigate' || url.pathname.endsWith('.css') || url.pathname.endsWith('.js')) {
     event.respondWith(
       fetch(req)
         .then((res) => {
-          const copy = res.clone();
-          caches.open(VERSION).then((c) => c.put('./index.html', copy));
+          if (res.ok) {
+            const copy = res.clone();
+            caches.open(VERSION).then((c) => c.put(req, copy));
+          }
           return res;
         })
-        .catch(() => caches.match('./index.html').then((r) => r || Response.error())),
+        .catch(() =>
+          caches.match(req).then(
+            (r) =>
+              r ||
+              caches.match('./index.html').then((h) => h || Response.error()),
+          ),
+        ),
     );
     return;
   }
 
-  /* fonts & icons: cache-first (immutable enough) */
+  /* fonts & icons: cache-first (URLs are version-stamped and immutable) */
   if (isFont(url) || url.pathname.startsWith('/assets/img/')) {
     event.respondWith(
       caches.match(req).then((hit) => hit || fetch(req).then((res) => {
@@ -87,7 +107,7 @@ self.addEventListener('fetch', (event) => {
     return;
   }
 
-  /* other same-origin assets: stale-while-revalidate */
+  /* any other same-origin GET: stale-while-revalidate */
   event.respondWith(
     caches.match(req).then((hit) => {
       const refresh = fetch(req).then((res) => {

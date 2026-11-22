@@ -8,11 +8,11 @@ const $ = (s, r = document) => r.querySelector(s);
 const $$ = (s, r = document) => [...r.querySelectorAll(s)];
 
 const SITE_URL = 'https://net.spos.ly/';
-const VERSION = '4.0.0';
+const VERSION = '5.0.0';
 
 /* self-hosted webfonts (see assets/css/fonts.css) */
-const F_DISP = "'Readex Pro', system-ui, sans-serif";   /* numerals, wordmark, dates */
-const F_TXT = "'Readex Pro', system-ui, sans-serif";      /* Arabic labels */
+const F_DISP = "'IBM Plex Sans Arabic', system-ui, sans-serif";   /* numerals, wordmark, dates */
+const F_TXT = "'IBM Plex Sans Arabic', system-ui, sans-serif";      /* Arabic labels */
 
 const DEFAULTS = { lang: 'ar', unit: 'mbps', duration: 12, streams: 8, loaded: true, loss: true, shareFmt: 'square' };
 
@@ -144,12 +144,13 @@ async function initMeta() {
 
 /* ── gauge + readout ─────────────────────────────────────── */
 
-/* every phase shares the one accent — tonal steps of the SAME hue only */
+/* each phase owns its gradient — download cyan→blue, upload violet→pink,
+   ping amber, done: the full brand sweep. The dial announces the phase. */
 const PHASE_COLORS = {
-  ping: ['#38bdf8', '#38bdf8', '#7dd3fc'],
-  download: ['#38bdf8', '#38bdf8', '#7dd3fc'],
-  upload: ['#38bdf8', '#38bdf8', '#7dd3fc'],
-  done: ['#38bdf8', '#38bdf8', '#7dd3fc'],
+  ping: ['#fcd34d', '#f59e0b', '#fde68a'],
+  download: ['#22d3ee', '#3b82f6', '#67e8f9'],
+  upload: ['#a78bfa', '#e879f9', '#c4b5fd'],
+  done: ['#22d3ee', '#818cf8', '#67e8f9'],
 };
 
 function setPhasePill(ph) {
@@ -239,10 +240,11 @@ const SPARK = {
       ctx.setLineDash([]);
     }
 
-    /* series: download (accent) then upload (soft white) */
+    /* series: download cyan → upload violet — the two curves are
+       distinguishable at a glance and match the metric tiles */
     for (const [kind, color, fill] of [
-      ['down', '#38bdf8', 'rgba(56,189,248,.20)'],
-      ['up', 'rgba(233,237,245,.78)', 'rgba(233,237,245,.10)'],
+      ['down', '#22d3ee', 'rgba(34,211,238,.22)'],
+      ['up', '#a78bfa', 'rgba(167,139,250,.16)'],
     ]) {
       const pts = this.samples.filter((s) => s[1] === kind);
       if (pts.length < 2) continue;
@@ -514,7 +516,7 @@ function renderDetails(r) {
     : `<small>${d.loadedNo}</small>`;
   const loss = r.loss.pct == null
     ? `<small>${d.loadedNo}</small>`
-    : `${r.loss.pct.toFixed(1)}% <small>(${r.loss.lost} ${d.failed} ${d.of} ${r.loss.sent})</small>`;
+    : `${r.loss.pct.toFixed(1)}% <small>(${(r.loss.lost || 0) + (r.loss.spikes || 0)} ${d.failed} ${d.of} ${r.loss.sent})</small>`;
   const dlSus = r.download.sustained ?? r.download.avg;
   const ulSus = r.upload.sustained ?? r.upload.avg;
   const consist = r.download.peak > 0
@@ -725,8 +727,8 @@ function drawHistChart(hist) {
 
   /* area + line */
   const grad = ctx.createLinearGradient(0, 0, 0, h);
-  grad.addColorStop(0, 'rgba(56,189,248,.28)');
-  grad.addColorStop(1, 'rgba(56,189,248,0)');
+  grad.addColorStop(0, 'rgba(34,211,238,.28)');
+  grad.addColorStop(1, 'rgba(34,211,238,0)');
   ctx.beginPath();
   ctx.moveTo(X(0), Y(data[0].dl));
   data.forEach((d, i) => ctx.lineTo(X(i), Y(d.dl)));
@@ -738,7 +740,7 @@ function drawHistChart(hist) {
 
   ctx.beginPath();
   data.forEach((d, i) => (i ? ctx.lineTo(X(i), Y(d.dl)) : ctx.moveTo(X(i), Y(d.dl))));
-  ctx.strokeStyle = '#38bdf8';
+  ctx.strokeStyle = '#22d3ee';
   ctx.lineWidth = 2;
   ctx.lineJoin = 'round';
   ctx.stroke();
@@ -748,7 +750,7 @@ function drawHistChart(hist) {
     const last = i === data.length - 1;
     ctx.beginPath();
     ctx.arc(X(i), Y(d.dl), last ? 4 : 2.4, 0, 7);
-    ctx.fillStyle = last ? '#fff' : 'rgba(56,189,248,.55)';
+    ctx.fillStyle = last ? '#fff' : 'rgba(34,211,238,.55)';
     ctx.fill();
   });
 
@@ -844,7 +846,7 @@ function expand(c) {
   const r = {
     ts: c.ts, id: c.id, meta: { org: c.org, city: c.city, colo: c.colo, proto: '' },
     ping: { med: c.pg, min: c.pg, avg: c.pg, max: c.pg, jitter: c.jt, samples: [] },
-    loss: { pct: c.ls, sent: 0, lost: 0 },
+    loss: { pct: c.ls, sent: 0, lost: 0, spikes: 0 },
     loaded: { samples: [] },
     download: { avg: c.dl, sustained: c.dl, peak: c.dl, bytes: 0, ms: 0 },
     upload: { avg: c.ul, sustained: c.ul, peak: c.ul, bytes: 0, ms: 0 },
@@ -964,7 +966,7 @@ function drawMark(x, cx, cy, s) {
   x.stroke();
 
   const r = s * 0.30;
-  x.strokeStyle = '#38bdf8';
+  x.strokeStyle = '#22d3ee';
   x.lineWidth = s * 0.095;
   x.lineCap = 'round';
   /* 270° arc: -135°…+135° in gauge convention → 135°…405° canvas */
@@ -997,8 +999,8 @@ function drawCardGauge(x, cx, cy, R, frac, lw) {
 
   const a0 = (135 * Math.PI) / 180;
   const a1 = a0 + ((405 - 135) * Math.PI) / 180 * Math.max(0.004, Math.min(1, frac));
-  x.strokeStyle = '#38bdf8';
-  x.shadowColor = 'rgba(56,189,248,.35)';
+  x.strokeStyle = '#22d3ee';
+  x.shadowColor = 'rgba(34,211,238,.35)';
   x.shadowBlur = lw * 1.4;
   x.beginPath();
   x.arc(cx, cy, R, a0, a1);
@@ -1059,8 +1061,8 @@ function drawCard(x, W, H, c, r) {
   /* background — one accent hue, two very quiet glows */
   x.fillStyle = '#0a0e17';
   x.fillRect(0, 0, W, H);
-  blobGrad(x, W * 0.85, H * 0.08, Math.max(W, H) * 0.55, 'rgba(56,189,248,.10)');
-  blobGrad(x, W * 0.10, H * 0.94, Math.max(W, H) * 0.52, 'rgba(56,189,248,.06)');
+  blobGrad(x, W * 0.85, H * 0.08, Math.max(W, H) * 0.55, 'rgba(34,211,238,.10)');
+  blobGrad(x, W * 0.10, H * 0.94, Math.max(W, H) * 0.52, 'rgba(129,140,248,.07)');
 
   const score = scoreOf(r);
   const gradeColor = score.cls === 'good' ? '#34d399' : score.cls === 'mid' ? '#fbbf24' : '#f87171';
@@ -1112,12 +1114,12 @@ function drawCard(x, W, H, c, r) {
   x.stroke();
   pairCenter(x, RTL, gLbl, pFont, RTL ? 'rtl' : 'ltr', gScore, pNumFont, gx, pillY + pillH / 2 + 1, 20, gradeColor, gradeColor);
 
-  /* ── metric tiles — neutral values; color stays on the grade pill only ── */
+  /* ── metric tiles — one deliberate hue per metric, same as the site ── */
   const tiles = [
-    [t('m.upload'), fmtSpeed(c.ul), 'Mbps', '#f2f5fb'],
-    [t('m.ping'), fmtMs(c.pg), 'ms', '#f2f5fb'],
-    [t('m.jitter'), fmtMs(c.jt), 'ms', '#f2f5fb'],
-    [t('m.loss'), c.ls == null ? '—' : String(c.ls), '%', '#f2f5fb'],
+    [t('m.upload'), fmtSpeed(c.ul), 'Mbps', '#c4b5fd'],
+    [t('m.ping'), fmtMs(c.pg), 'ms', '#fcd34d'],
+    [t('m.jitter'), fmtMs(c.jt), 'ms', '#fda4af'],
+    [t('m.loss'), c.ls == null ? '—' : String(c.ls), '%', c.ls != null && c.ls > 1 ? '#f87171' : '#6ee7b7'],
   ];
 
   if (pt_) {
@@ -1174,7 +1176,7 @@ function drawCard(x, W, H, c, r) {
     x.restore();
   }
   run(x, RTL ? 'صولة للأنظمة' : 'SPOS Systems', `700 ${sq || pt_ ? 27 : 29}px ${TXT}`, lcx + dir * (logoS / 2 + 16), fY, RTL ? 'right' : 'left', RTL ? 'rtl' : 'ltr', '#c6cfdf');
-  run(x, 'net.spos.ly', `700 ${sq || pt_ ? 25 : 27}px ${DISP}`, endEdge, fY, RTL ? 'left' : 'right', 'ltr', '#38bdf8');
+  run(x, 'net.spos.ly', `700 ${sq || pt_ ? 25 : 27}px ${DISP}`, endEdge, fY, RTL ? 'left' : 'right', 'ltr', '#22d3ee');
 }
 
 /* make sure every family/weight the card uses is really loaded —
@@ -1437,6 +1439,49 @@ function boot() {
   resetUI();
   renderHistory();
   $('#ver-tag').textContent = `SPOS Net v${VERSION}`;
+
+  /* ── font watchdog ─────────────────────────────────────────
+   * The #1 historical complaint: "the Arabic font never changes".
+   * Server-side everything is correct, so the remaining causes are
+   * client-side (stale proxy/HTTP cache, old WebView, blocked fonts).
+   * Here we (1) wait for the fonts, (2) verify the Arabic glyphs of the
+   * family really loaded, (3) if not, re-inject the stylesheet once with
+   * a cache-busting query that defeats every caching layer, and (4) name
+   * the ACTIVE font in the footer + about drawer so the state is visible
+   * at a glance — no DevTools needed. */
+  (async () => {
+    const FAM = 'IBM Plex Sans Arabic';
+    const probe = () => {
+      try { return document.fonts.check(`600 16px "${FAM}"`, 'اختبار السرعة 123'); }
+      catch { return false; }
+    };
+    try { await document.fonts.ready; } catch { /* old engines */ }
+    if (!probe()) {
+      const link = document.createElement('link');
+      link.rel = 'stylesheet';
+      link.href = `assets/css/fonts.css?v=5&r=${Date.now()}`;
+      document.head.appendChild(link);
+      try { await document.fonts.load(`600 16px "${FAM}"`, 'اختبار السرعة 123'); } catch { /* ignore */ }
+      try { await document.fonts.ready; } catch { /* ignore */ }
+    }
+    const ok = probe();
+    document.documentElement.classList.add(ok ? 'font-loaded' : 'font-fallback');
+    const foot = $('#foot-font');
+    if (foot) {
+      foot.classList.add(ok ? 'ok' : 'bad');
+      foot.textContent = ok ? FAM : (getLang() === 'ar' ? 'خط النظام (فشل تحميل الخط)' : 'System font (custom font failed)');
+      foot.title = ok
+        ? (getLang() === 'ar' ? 'الخط النشط: IBM Plex Sans Arabic — مستضاف ذاتياً' : 'Active font: IBM Plex Sans Arabic — self-hosted')
+        : (getLang() === 'ar' ? 'تعذّر تحميل الخط المخصص، يُستخدم خط النظام' : 'Custom font failed to load; system font in use');
+    }
+    const tag = $('#font-tag');
+    if (tag) {
+      tag.textContent = getLang() === 'ar'
+        ? (ok ? `الخط: ${FAM}` : 'الخط: خط النظام (فشل التحميل)')
+        : (ok ? `Font: ${FAM}` : 'Font: system (failed)');
+      tag.style.color = ok ? 'var(--ok)' : 'var(--bad)';
+    }
+  })();
 
   /* PWA: register the service worker (offline app shell) */
   if ('serviceWorker' in navigator) {
