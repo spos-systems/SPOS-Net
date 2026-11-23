@@ -12,7 +12,7 @@
  *     APIs) are never intercepted.
  *   • All caches from older versions are purged on activate.
  */
-const VERSION = 'sposnet-v9.2.0';
+const VERSION = 'sposnet-v9.3.0';
 
 const SHELL = [
   './',
@@ -21,9 +21,9 @@ const SHELL = [
   './404.html',
   './assets/fonts/nkufi-arabic-v9.woff2',
   './assets/fonts/nkufi-latin-v9.woff2',
-  './assets/css/fonts.css?v=9.2',
-  './assets/css/style.css?v=9.2',
-  './assets/js/app.js?v=9.2',
+  './assets/css/fonts.css?v=9.3',
+  './assets/css/style.css?v=9.3',
+  './assets/js/app.js?v=9.3',
   './assets/js/engine.js',
   './assets/js/gauge.js',
   './assets/js/i18n.js',

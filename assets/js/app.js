@@ -8,7 +8,7 @@ const $ = (s, r = document) => r.querySelector(s);
 const $$ = (s, r = document) => [...r.querySelectorAll(s)];
 
 const SITE_URL = 'https://net.spos.ly/';
-const VERSION = '9.2.0';
+const VERSION = '9.3.0';
 
 /* ── theme (dark ⇄ light) ───────────────────────────────────
    Dark is the default look; the topbar toggle switches to light.
@@ -32,12 +32,38 @@ const chartColors = () => (html.dataset.theme === 'light'
       grid: 'rgba(255,255,255,.11)', gridStrong: 'rgba(255,255,255,.16)', label: 'rgba(167,177,194,.7)',
     });
 
+/* share-card palette — read LIVE from the same CSS tokens the UI uses,
+   at draw time, so the exported image always matches the active theme:
+   dark card while the site is dark, light card while it is light. */
+const cssVar = (n) => getComputedStyle(document.documentElement).getPropertyValue(n).trim();
+function cardColors() {
+  const L = html.dataset.theme === 'light';
+  return {
+    bg: cssVar('--bg'), card: cssVar('--bg-card'),
+    line: cssVar('--line'), line2: cssVar('--line-2'),
+    txt: cssVar('--txt'), txt2: cssVar('--txt-2'), txt3: cssVar('--txt-3'),
+    acc: cssVar('--acc'), dl: cssVar('--dl'), ul: cssVar('--ul'), pg: cssVar('--pg'), jt: cssVar('--jt'),
+    ok: cssVar('--ok'), bad: cssVar('--bad'), mid: L ? '#b45309' : cssVar('--warn'),
+    track: cssVar('--gauge-track'),
+    /* card-only surface treatment, per theme */
+    tileFill: L ? '#ffffff' : 'rgba(255,255,255,.035)',
+    tileLine: L ? cssVar('--line') : 'rgba(255,255,255,.07)',
+    divider: L ? cssVar('--line') : 'rgba(255,255,255,.08)',
+    pillFill: L ? '#ffffff' : 'rgba(255,255,255,.05)',
+    glowDl: L ? 'rgba(10,160,204,.07)' : 'rgba(34,211,238,.11)',
+    glowUl: L ? 'rgba(124,92,230,.05)' : 'rgba(167,139,250,.09)',
+  };
+}
+
 function applyTheme(th, persist = false) {
   html.dataset.theme = th;
   const meta = document.querySelector('meta[name="theme-color"]');
   if (meta) meta.content = th === 'light' ? '#f2f3f5' : '#0b0e14';
   if (persist) { try { localStorage.setItem(THEME_KEY, th); } catch { /* ignore */ } }
   if (typeof renderHistory === 'function') renderHistory();
+  /* an open share sheet re-renders its live preview in the new theme */
+  const sheet = document.querySelector('#dr-share');
+  if (sheet && sheet.classList.contains('open')) renderSharePreview();
 }
 
 /* self-hosted webfonts — Noto Kufi Arabic (v9): geometric Kufi
@@ -1032,18 +1058,20 @@ function roundRect(x, px, py, w, h, r) {
   x.closePath();
 }
 
-/* the SPOS Net site mark drawn programmatically (rounded square + arc + needle) */
-function drawMark(x, cx, cy, s) {
+/* the SPOS Net site mark drawn programmatically — same recipe as the
+   topbar/footer brand mark (card-color box, thin border, accent arc,
+   ink needle), so the mark on the card follows the active theme too */
+function drawMark(x, cx, cy, s, C) {
   const half = s / 2;
   roundRect(x, cx - half, cy - half, s, s, s * 0.24);
-  x.fillStyle = '#10151f';
+  x.fillStyle = C.card;
   x.fill();
-  x.strokeStyle = '#28324a';
+  x.strokeStyle = C.line2;
   x.lineWidth = Math.max(1.5, s * 0.035);
   x.stroke();
 
   const r = s * 0.30;
-  x.strokeStyle = '#29b6f6';
+  x.strokeStyle = C.acc;
   x.lineWidth = s * 0.095;
   x.lineCap = 'round';
   /* 270° arc: -135°…+135° in gauge convention → 135°…405° canvas */
@@ -1053,22 +1081,23 @@ function drawMark(x, cx, cy, s) {
 
   /* needle tilted slightly right of 12 o'clock */
   const a = (22 * Math.PI) / 180;
-  x.strokeStyle = '#eef2fa';
+  x.strokeStyle = C.txt;
   x.lineWidth = s * 0.062;
   x.beginPath();
   x.moveTo(cx, cy);
   x.lineTo(cx + Math.sin(a) * r * 0.85, cy - Math.cos(a) * r * 0.85);
   x.stroke();
-  x.fillStyle = '#eef2fa';
+  x.fillStyle = C.txt;
   x.beginPath();
   x.arc(cx, cy, s * 0.055, 0, 7);
   x.fill();
 }
 
-/* mini gauge arc with gradient + tip dot */
-function drawCardGauge(x, cx, cy, R, frac, lw) {
+/* mini gauge arc — flat like the site dial (v9: no glow), theme track,
+   download-hue value arc, ringed tip dot anchored on the arc end */
+function drawCardGauge(x, cx, cy, R, frac, lw, C) {
   x.lineCap = 'round';
-  x.strokeStyle = '#1a2130';
+  x.strokeStyle = C.track;
   x.lineWidth = lw;
   x.beginPath();
   x.arc(cx, cy, R, (135 * Math.PI) / 180, (405 * Math.PI) / 180);
@@ -1076,19 +1105,20 @@ function drawCardGauge(x, cx, cy, R, frac, lw) {
 
   const a0 = (135 * Math.PI) / 180;
   const a1 = a0 + ((405 - 135) * Math.PI) / 180 * Math.max(0.004, Math.min(1, frac));
-  x.strokeStyle = '#29b6f6';
-  x.shadowColor = 'rgba(41,182,246,.35)';
-  x.shadowBlur = lw * 1.4;
+  x.strokeStyle = C.dl;
   x.beginPath();
   x.arc(cx, cy, R, a0, a1);
   x.stroke();
-  x.shadowBlur = 0;
 
-  /* tip dot */
+  /* tip dot — white fill with a download-hue ring so it also reads
+     on the light track */
   x.fillStyle = '#ffffff';
+  x.strokeStyle = C.dl;
+  x.lineWidth = Math.max(2, lw * 0.22);
   x.beginPath();
   x.arc(cx + Math.cos(a1) * R, cy + Math.sin(a1) * R, lw * 0.55, 0, 7);
   x.fill();
+  x.stroke();
 }
 
 /* RTL-safe canvas text primitives.
@@ -1133,16 +1163,17 @@ function ltrPair(x, a, aFont, b, bFont, cx, cy, gap, aColor, bColor) {
 function drawCard(x, W, H, c, r) {
   const RTL = getLang() === 'ar';
   const DISP = F_DISP, TXT = F_TXT;
+  const C = cardColors();
   x.textBaseline = 'middle';
 
-  /* background — one accent hue, two very quiet glows */
-  x.fillStyle = '#0d1420';
+  /* background — the page background of the active theme + two quiet glows */
+  x.fillStyle = C.bg;
   x.fillRect(0, 0, W, H);
-  blobGrad(x, W * 0.85, H * 0.08, Math.max(W, H) * 0.55, 'rgba(41,182,246,.12)');
-  blobGrad(x, W * 0.10, H * 0.94, Math.max(W, H) * 0.52, 'rgba(131,87,224,.09)');
+  blobGrad(x, W * 0.85, H * 0.08, Math.max(W, H) * 0.55, C.glowDl);
+  blobGrad(x, W * 0.10, H * 0.94, Math.max(W, H) * 0.52, C.glowUl);
 
   const score = scoreOf(r);
-  const gradeColor = score.cls === 'good' ? '#34d399' : score.cls === 'mid' ? '#fbbf24' : '#f87171';
+  const gradeColor = score.cls === 'good' ? C.ok : score.cls === 'mid' ? C.mid : C.bad;
   const date = new Date(c.ts);
   const ds = `${String(date.getHours()).padStart(2, '0')}:${String(date.getMinutes()).padStart(2, '0')} · ${date.getDate()}/${date.getMonth() + 1}/${date.getFullYear()}`;
   const fmt = shareFmt;
@@ -1156,20 +1187,20 @@ function drawCard(x, W, H, c, r) {
   const endEdge = RTL ? pad : W - pad;
   const dir = RTL ? -1 : 1;
 
-  drawMark(x, startEdge + dir * mkS / 2, hY, mkS);
-  run(x, 'SPOS Net', `700 ${Math.round(mkS * 0.56)}px ${DISP}`, startEdge + dir * (mkS + 18), hY + 1, RTL ? 'right' : 'left', 'ltr', '#eef2fa');
-  run(x, ds + (c.id ? '  ·  ' + c.id : ''), `500 ${sq || pt_ ? 24 : 26}px ${DISP}`, endEdge, hY + 1, RTL ? 'left' : 'right', 'ltr', '#66738e');
+  drawMark(x, startEdge + dir * mkS / 2, hY, mkS, C);
+  run(x, 'SPOS Net', `700 ${Math.round(mkS * 0.56)}px ${DISP}`, startEdge + dir * (mkS + 18), hY + 1, RTL ? 'right' : 'left', 'ltr', C.txt);
+  run(x, ds + (c.id ? '  ·  ' + c.id : ''), `500 ${sq || pt_ ? 24 : 26}px ${DISP}`, endEdge, hY + 1, RTL ? 'left' : 'right', 'ltr', C.txt3);
 
   /* ── gauge + big number ── */
   const gx = W / 2;
   const gy = pt_ ? 780 : sq ? 480 : 560;
   const gR = pt_ ? 300 : sq ? 208 : 232;
   const numSize = pt_ ? 150 : sq ? 108 : 120;
-  drawCardGauge(x, gx, gy, gR, logScore(c.dl, 0.5, 1000), gR * 0.062);
+  drawCardGauge(x, gx, gy, gR, logScore(c.dl, 0.5, 1000), gR * 0.062, C);
 
-  run(x, fmtSpeed(c.dl), `700 ${numSize}px ${DISP}`, gx, gy - numSize * 0.14, 'center', 'ltr', '#f2f5fb');
+  run(x, fmtSpeed(c.dl), `700 ${numSize}px ${DISP}`, gx, gy - numSize * 0.14, 'center', 'ltr', C.txt);
   const lblSize = Math.round(numSize * 0.28);
-  pairCenter(x, RTL, t('gauge.download'), `600 ${lblSize}px ${TXT}`, RTL ? 'rtl' : 'ltr', 'Mbps', `600 ${lblSize}px ${DISP}`, gx, gy + numSize * 0.52, 16);
+  pairCenter(x, RTL, t('gauge.download'), `600 ${lblSize}px ${TXT}`, RTL ? 'rtl' : 'ltr', 'Mbps', `600 ${lblSize}px ${DISP}`, gx, gy + numSize * 0.52, 16, C.txt2, C.txt2);
 
   /* grade pill under the number */
   const gLbl = t(`grade.${score.grade}`);
@@ -1184,7 +1215,7 @@ function drawCard(x, W, H, c, r) {
   const pillW = Math.round(gw + sw + 110);
   const pillY = gy + numSize * 0.52 + numSize * 0.38;
   roundRect(x, gx - pillW / 2, pillY, pillW, pillH, pillH / 2);
-  x.fillStyle = 'rgba(255,255,255,.05)';
+  x.fillStyle = C.pillFill;
   x.fill();
   x.strokeStyle = gradeColor + '66';
   x.lineWidth = 2;
@@ -1193,10 +1224,10 @@ function drawCard(x, W, H, c, r) {
 
   /* ── metric tiles — one deliberate hue per metric, same as the site ── */
   const tiles = [
-    [t('m.upload'), fmtSpeed(c.ul), 'Mbps', '#c4b5fd'],
-    [t('m.ping'), fmtMs(c.pg), 'ms', '#f5c242'],
-    [t('m.jitter'), fmtMs(c.jt), 'ms', '#cbd5e1'],
-    [t('m.loss'), c.ls == null ? '—' : String(c.ls), '%', c.ls != null && c.ls > 1 ? '#f87171' : '#6ee7b7'],
+    [t('m.upload'), fmtSpeed(c.ul), 'Mbps', C.ul],
+    [t('m.ping'), fmtMs(c.pg), 'ms', C.pg],
+    [t('m.jitter'), fmtMs(c.jt), 'ms', C.jt],
+    [t('m.loss'), c.ls == null ? '—' : String(c.ls), '%', c.ls != null && c.ls > 1 ? C.bad : C.ok],
   ];
 
   if (pt_) {
@@ -1208,27 +1239,27 @@ function drawCard(x, W, H, c, r) {
       const tx = pad + col * (tw + gap);
       const ty = gy0 + row * (th + gap);
       roundRect(x, tx, ty, tw, th, 26);
-      x.fillStyle = 'rgba(255,255,255,.035)';
+      x.fillStyle = C.tileFill;
       x.fill();
-      x.strokeStyle = 'rgba(255,255,255,.07)';
+      x.strokeStyle = C.tileLine;
       x.lineWidth = 2;
       x.stroke();
-      run(x, label, `600 30px ${TXT}`, RTL ? tx + tw - 34 : tx + 34, ty + 44, RTL ? 'right' : 'left', RTL ? 'rtl' : 'ltr', '#66738e');
-      ltrPair(x, val, `600 60px ${DISP}`, unit, `600 26px ${DISP}`, tx + tw / 2, ty + 102, 10, color, '#66738e');
+      run(x, label, `600 30px ${TXT}`, RTL ? tx + tw - 34 : tx + 34, ty + 44, RTL ? 'right' : 'left', RTL ? 'rtl' : 'ltr', C.txt3);
+      ltrPair(x, val, `600 60px ${DISP}`, unit, `600 26px ${DISP}`, tx + tw / 2, ty + 102, 10, color, C.txt3);
     });
   } else {
     /* square / landscape: one row of four */
     const rowY = sq ? 812 : 878;
     const tw = (W - pad * 2) / 4;
-    x.strokeStyle = 'rgba(255,255,255,.08)';
+    x.strokeStyle = C.divider;
     x.lineWidth = 2;
     x.beginPath(); x.moveTo(pad, rowY - 44); x.lineTo(W - pad, rowY - 44); x.stroke();
     tiles.forEach(([label, val, unit, color], i) => {
       const tx = pad + tw * i + tw / 2;
-      run(x, label, `600 ${sq ? 26 : 28}px ${TXT}`, tx, rowY - 6, 'center', RTL ? 'rtl' : 'ltr', '#66738e');
-      ltrPair(x, val, `600 ${sq ? 46 : 50}px ${DISP}`, unit, `600 ${sq ? 24 : 26}px ${DISP}`, tx, rowY + 48, 8, color, '#66738e');
+      run(x, label, `600 ${sq ? 26 : 28}px ${TXT}`, tx, rowY - 6, 'center', RTL ? 'rtl' : 'ltr', C.txt3);
+      ltrPair(x, val, `600 ${sq ? 46 : 50}px ${DISP}`, unit, `600 ${sq ? 24 : 26}px ${DISP}`, tx, rowY + 48, 8, color, C.txt3);
       if (i) {
-        x.strokeStyle = 'rgba(255,255,255,.07)';
+        x.strokeStyle = C.tileLine;
         x.lineWidth = 2;
         x.beginPath(); x.moveTo(pad + tw * i, rowY - 22); x.lineTo(pad + tw * i, rowY + 74); x.stroke();
       }
@@ -1238,7 +1269,7 @@ function drawCard(x, W, H, c, r) {
   /* ── footer: company credit (start side) · url (end side) ── */
   const fY = pt_ ? 1790 : sq ? 986 : 1004;
   const creditLabel = t('f.dev');
-  run(x, creditLabel, `500 ${sq || pt_ ? 26 : 28}px ${TXT}`, startEdge, fY, RTL ? 'right' : 'left', RTL ? 'rtl' : 'ltr', '#66738e');
+  run(x, creditLabel, `500 ${sq || pt_ ? 26 : 28}px ${TXT}`, startEdge, fY, RTL ? 'right' : 'left', RTL ? 'rtl' : 'ltr', C.txt3);
   x.font = `500 ${sq || pt_ ? 26 : 28}px ${TXT}`;
   const cw = x.measureText(creditLabel).width;
   const logoS = 44;
@@ -1252,8 +1283,8 @@ function drawCard(x, W, H, c, r) {
     x.drawImage(logo, lcx - logoS / 2, fY - logoS / 2, logoS, logoS);
     x.restore();
   }
-  run(x, RTL ? 'صولة للأنظمة' : 'SPOS Systems', `700 ${sq || pt_ ? 27 : 29}px ${TXT}`, lcx + dir * (logoS / 2 + 16), fY, RTL ? 'right' : 'left', RTL ? 'rtl' : 'ltr', '#c6cfdf');
-  run(x, 'net.spos.ly', `700 ${sq || pt_ ? 25 : 27}px ${DISP}`, endEdge, fY, RTL ? 'left' : 'right', 'ltr', '#29b6f6');
+  run(x, RTL ? 'صولة للأنظمة' : 'SPOS Systems', `700 ${sq || pt_ ? 27 : 29}px ${TXT}`, lcx + dir * (logoS / 2 + 16), fY, RTL ? 'right' : 'left', RTL ? 'rtl' : 'ltr', C.txt2);
+  run(x, 'net.spos.ly', `700 ${sq || pt_ ? 25 : 27}px ${DISP}`, endEdge, fY, RTL ? 'left' : 'right', 'ltr', C.acc);
 }
 
 /* make sure every family/weight the card uses is really loaded —
@@ -1538,7 +1569,7 @@ function boot() {
     if (!probe()) {
       const link = document.createElement('link');
       link.rel = 'stylesheet';
-      link.href = `assets/css/fonts.css?v=9.2&r=${Date.now()}`;
+      link.href = `assets/css/fonts.css?v=9.3&r=${Date.now()}`;
       document.head.appendChild(link);
       try { await document.fonts.load(`600 16px "${FAM}"`, 'اختبار السرعة 123'); } catch { /* ignore */ }
       try { await document.fonts.ready; } catch { /* ignore */ }
