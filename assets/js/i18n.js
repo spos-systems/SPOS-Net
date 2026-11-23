@@ -189,6 +189,7 @@ export const DICT = {
     aria: {
       settings: 'الإعدادات', close: 'إغلاق', gauge: 'عداد السرعة',
       metrics: 'النتائج', start: 'ابدأ الاختبار', stop: 'إيقاف الاختبار',
+      theme: 'تبديل المظهر (داكن/فاتح)',
     },
 
     u: { mbps: 'Mbps', mbytes: 'MB/s', kbps: 'kbps' },
@@ -362,6 +363,7 @@ export const DICT = {
     aria: {
       settings: 'Settings', close: 'Close', gauge: 'Speed gauge',
       metrics: 'Results', start: 'Start test', stop: 'Stop test',
+      theme: 'Toggle theme (dark/light)',
     },
 
     u: { mbps: 'Mbps', mbytes: 'MB/s', kbps: 'kbps' },

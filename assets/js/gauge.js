@@ -107,7 +107,7 @@ export class Gauge {
     const [nx1, ny1] = pt(78, 0), [nx2, ny2] = pt(R - 16, 0);
     el('line', {
       x1: nx1, y1: ny1, x2: nx2, y2: ny2,
-      stroke: '#e8edf5', 'stroke-width': '4.4', 'stroke-linecap': 'round',
+      stroke: 'var(--needle)', 'stroke-width': '4.4', 'stroke-linecap': 'round',
     }, this.needle);
     this.hubDot = el('circle', { cx: CX, cy: CY, r: '0', fill: '#26b8d6' }, this.needle);
   }

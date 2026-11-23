@@ -8,7 +8,37 @@ const $ = (s, r = document) => r.querySelector(s);
 const $$ = (s, r = document) => [...r.querySelectorAll(s)];
 
 const SITE_URL = 'https://net.spos.ly/';
-const VERSION = '9.0.0';
+const VERSION = '9.1.0';
+
+/* ── theme (dark ⇄ light) ───────────────────────────────────
+   Dark is the default look; the topbar toggle switches to light.
+   The choice persists in localStorage. Canvas-drawn charts read
+   theme-aware colors at draw time so a mid-session toggle recolors
+   them on the next frame. */
+const THEME_KEY = 'spos-theme';
+const initTheme = () => {
+  let th = null;
+  try { th = localStorage.getItem(THEME_KEY); } catch { /* private mode */ }
+  /* default: dark (the brand look); an explicit toggle choice persists */
+  return th === 'light' ? 'light' : 'dark';
+};
+const chartColors = () => (html.dataset.theme === 'light'
+  ? {
+      dl: '#0e9fd1', dlA: 'rgba(14,159,209,.15)', ul: '#8357e0', ulA: 'rgba(131,87,224,.13)',
+      grid: 'rgba(23,24,28,.11)', gridStrong: 'rgba(23,24,28,.14)', label: 'rgba(90,98,110,.75)',
+    }
+  : {
+      dl: '#22d3ee', dlA: 'rgba(34,211,238,.14)', ul: '#a78bfa', ulA: 'rgba(167,139,250,.12)',
+      grid: 'rgba(255,255,255,.11)', gridStrong: 'rgba(255,255,255,.16)', label: 'rgba(167,177,194,.7)',
+    });
+
+function applyTheme(th, persist = false) {
+  html.dataset.theme = th;
+  const meta = document.querySelector('meta[name="theme-color"]');
+  if (meta) meta.content = th === 'light' ? '#f2f3f5' : '#0b0e14';
+  if (persist) { try { localStorage.setItem(THEME_KEY, th); } catch { /* ignore */ } }
+  if (typeof renderHistory === 'function') renderHistory();
+}
 
 /* self-hosted webfonts — Noto Kufi Arabic (v9): geometric Kufi
  * letterforms, shipped as two small variable-font files (arabic +
@@ -230,7 +260,7 @@ const SPARK = {
 
     /* faint grid */
     ctx.lineWidth = 1;
-    ctx.strokeStyle = 'rgba(23,24,28,.06)';
+    ctx.strokeStyle = chartColors().grid;
     for (const f of [0.25, 0.5, 0.75]) {
       const y = Y(max * f);
       ctx.beginPath(); ctx.moveTo(0, y); ctx.lineTo(w, y); ctx.stroke();
@@ -239,7 +269,7 @@ const SPARK = {
     /* download → upload divider */
     const up = this.marks.find((m) => m[1] === 'upload');
     if (up) {
-      ctx.strokeStyle = 'rgba(23,24,28,.14)';
+      ctx.strokeStyle = chartColors().gridStrong;
       ctx.setLineDash([3, 4]);
       ctx.beginPath(); ctx.moveTo(X(up[0]), 0); ctx.lineTo(X(up[0]), h); ctx.stroke();
       ctx.setLineDash([]);
@@ -247,9 +277,10 @@ const SPARK = {
 
     /* series: download cyan → upload violet — the two curves are
        distinguishable at a glance and match the metric tiles */
+    const CC = chartColors();
     for (const [kind, color, fill] of [
-      ['down', '#0e9fd1', 'rgba(14,159,209,.15)'],
-      ['up', '#8357e0', 'rgba(131,87,224,.13)'],
+      ['down', CC.dl, CC.dlA],
+      ['up', CC.ul, CC.ulA],
     ]) {
       const pts = this.samples.filter((s) => s[1] === kind);
       if (pts.length < 2) continue;
@@ -278,7 +309,7 @@ const SPARK = {
     /* scale label (top-left, always LTR) */
     const unit = t(`u.${settings.unit}`);
     const disp = settings.unit === 'mbytes' ? max / 8 : settings.unit === 'kbps' ? max * 1000 : max;
-    ctx.fillStyle = 'rgba(90,98,110,.75)';
+    ctx.fillStyle = chartColors().label;
     ctx.font = `600 10px ${F_DISP}`;
     ctx.textAlign = 'left';
     ctx.textBaseline = 'alphabetic';
@@ -763,7 +794,7 @@ function drawHistChart(hist) {
   const Y = (v) => h - 6 - (v / max) * (h - 16);
 
   /* grid */
-  ctx.strokeStyle = 'rgba(23,24,28,.07)';
+  ctx.strokeStyle = chartColors().grid;
   ctx.lineWidth = 1;
   for (const f of [0.5, 1]) {
     const y = Y(max * f);
@@ -785,24 +816,25 @@ function drawHistChart(hist) {
 
   ctx.beginPath();
   data.forEach((d, i) => (i ? ctx.lineTo(X(i), Y(d.dl)) : ctx.moveTo(X(i), Y(d.dl))));
-  ctx.strokeStyle = '#0e9fd1';
+  ctx.strokeStyle = chartColors().dl;
   ctx.lineWidth = 2;
   ctx.lineJoin = 'round';
   ctx.stroke();
 
   /* dots — last test highlighted */
+  const hc = chartColors();
   data.forEach((d, i) => {
     const last = i === data.length - 1;
     ctx.beginPath();
     ctx.arc(X(i), Y(d.dl), last ? 4 : 2.4, 0, 7);
-    ctx.fillStyle = last ? '#0e9fd1' : 'rgba(14,159,209,.5)';
+    ctx.fillStyle = last ? hc.dl : (html.dataset.theme === 'light' ? 'rgba(14,159,209,.5)' : 'rgba(34,211,238,.5)');
     ctx.fill();
   });
 
   /* max label */
   ctx.direction = 'ltr';
   ctx.font = `600 10px ${F_DISP}`;
-  ctx.fillStyle = 'rgba(90,98,110,.8)';
+  ctx.fillStyle = chartColors().label;
   ctx.textAlign = 'left';
   ctx.textBaseline = 'alphabetic';
   const unit = t(`u.${settings.unit}`);
@@ -1506,7 +1538,7 @@ function boot() {
     if (!probe()) {
       const link = document.createElement('link');
       link.rel = 'stylesheet';
-      link.href = `assets/css/fonts.css?v=9&r=${Date.now()}`;
+      link.href = `assets/css/fonts.css?v=9.1&r=${Date.now()}`;
       document.head.appendChild(link);
       try { await document.fonts.load(`600 16px "${FAM}"`, 'اختبار السرعة 123'); } catch { /* ignore */ }
       try { await document.fonts.ready; } catch { /* ignore */ }
@@ -1546,6 +1578,12 @@ function boot() {
     requestAnimationFrame(loop);
   };
   requestAnimationFrame(loop);
+
+  /* ── theme: apply saved / OS preference, wire the topbar toggle ── */
+  applyTheme(initTheme());
+  $('#btn-theme').addEventListener('click', () => {
+    applyTheme(html.dataset.theme === 'dark' ? 'light' : 'dark', true);
+  });
 
   $('#btn-start').addEventListener('click', startTest);
   $('#btn-again').addEventListener('click', startTest);
