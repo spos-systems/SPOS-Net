@@ -8,16 +8,14 @@
  * download phase always gets several INDEPENDENT TCP connections even when
  * the alternate Cloudflare HTTPS ports are filtered.
  *
- * Accuracy model (v2.3 — Ookla-compatible):
+ * Accuracy model (v7):
  *   1. Parallel streams spread across independent connections (each
- *      host:port pair = its own TCP+TLS pipe, like Ookla's socket pool).
+ *      host:port pair = its own TCP+TLS pipe).
  *   2. The clock starts at the FIRST byte; the TCP ramp-up window
  *      (≥1.5 s / 18% of the phase) is excluded from every figure.
- *   3. Final speed = Ookla's documented trimmed mean: instantaneous
+ *   3. Final speed = the industry-standard trimmed mean: instantaneous
  *      samples are sorted, the two fastest are removed, the slowest ~22%
- *      are discarded, and the mean of the remainder is reported. This is
- *      why speedtest.net reads higher than plain-average tools — and why
- *      we now match it.
+ *      are discarded, and the mean of the remainder is reported.
  *   4. Deadline enforcement: in-flight transfers are aborted exactly at
  *      the phase deadline (v2.2 could overrun by minutes on slow links).
  *   5. Latency = TTFB of empty downloads (median, min kept for details);
@@ -48,15 +46,16 @@ const TEST_FILE = '/assets/testdata/spos-16mb.bin';
 const MIRROR_JSD = 'https://cdn.jsdelivr.net/gh/spos-systems/SPOS-Net@main' + TEST_FILE;
 const MIRROR_RAW = 'https://raw.githubusercontent.com/spos-systems/SPOS-Net/main' + TEST_FILE;
 
-const UL_START = 4 << 20;               // 4 MiB, adaptive
+const UL_START = 1 << 20;                // 1 MiB, adaptive (fast ramp on quick links)
 const UL_MAX = 16 << 20;                // 16 MiB
 const UL_MIN = 512 << 10;               // 512 KiB
 const UL_PORT_SPAN = 4;                 // upload streams spread across ≤ 4 ports
+const UL_HARD_TIMEOUT = 15000;          // a stalled POST can never wedge the phase
 
 const RAMP_MIN_MS = 1500;               // excluded after first byte
 const RAMP_RATIO = 0.18;                // …or 18% of phase, whichever is larger
-const OOKLA_SLOW_DROP = 0.22;           // slowest samples discarded (Ookla ~22%)
-const OOKLA_FAST_KEEP_DROP = 2;         // …and the 2 fastest samples removed
+const TRIM_SLOW_SHARE = 0.22;           // slowest samples discarded (~22%)
+const TRIM_FAST_DROP = 2;               // …and the 2 fastest samples removed
 
 const sleep = (ms) => new Promise((r) => setTimeout(r, ms));
 const median = (arr) => {
@@ -370,7 +369,12 @@ export class Engine {
 
   /* ── throughput phase ────────────────────────────────────── */
   async #throughput(kind, signal, opts, res) {
-    const durationMs = opts.duration * 1000;
+    /* v7: the upload phase is deliberately SHORTER than download (75 %,
+       min 6 s) — uplink capacity converges faster and testers expect the
+       whole run to feel brisk once the deadline is actually enforced. */
+    const durationMs = kind === 'up'
+      ? Math.max(6000, opts.duration * 750)
+      : opts.duration * 1000;
     const streams = Math.max(1, opts.streams | 0);
 
     let pool;
@@ -441,7 +445,7 @@ export class Engine {
   }
 
   /* final figures from the timeline.
-   * avg       — Ookla-style trimmed mean (headline number)
+   * avg       — trimmed mean (headline number)
    * sustained — plain average over the stable window (details)
    * peak      — best 500 ms window (details) */
   #settle(st, started, durationMs) {
@@ -469,7 +473,7 @@ export class Engine {
     /* sustained: plain average over the stable window */
     out.sustained = ((bytesAt(winEnd) - bytesAt(cutT)) * 8) / 1e6 / Math.max((winEnd - cutT) / 1000, 0.05);
 
-    /* Ookla-style: 300 ms instantaneous samples over the stable window */
+    /* 300 ms instantaneous samples over the stable window */
     const samples = [];
     const WIN = 300;
     for (let t = cutT; t + WIN <= winEnd - 60; t += WIN) {
@@ -479,8 +483,8 @@ export class Engine {
 
     if (samples.length >= 6) {
       const s = [...samples].sort((a, b) => a - b);
-      s.splice(Math.max(0, s.length - OOKLA_FAST_KEEP_DROP), OOKLA_FAST_KEEP_DROP);   // drop 2 fastest
-      const dropSlow = Math.floor(s.length * OOKLA_SLOW_DROP);                        // drop slowest 22%
+      s.splice(Math.max(0, s.length - TRIM_FAST_DROP), TRIM_FAST_DROP);   // drop 2 fastest
+      const dropSlow = Math.floor(s.length * TRIM_SLOW_SHARE);                        // drop slowest 22%
       const kept = s.slice(dropSlow);
       if (kept.length) out.avg = kept.reduce((a, b) => a + b, 0) / kept.length;
     }
@@ -536,7 +540,11 @@ export class Engine {
   }
 
   /* ── upload stream: XHR + upload.onprogress (bytes counted
-   *     the moment they hit the wire, not on completion) ────── */
+   *     the moment they hit the wire, not on completion).
+   *     v7: the XHR is registered in the phase kill-set, so the deadline
+   *     abort()s in-flight uploads too (v5/v6 let the last 4–16 MiB POST
+   *     run to completion — the "upload takes forever" bug), and every
+   *     POST carries an independent hard timeout. */
   #ulRequest(st, port, size, deadline) {
     return new Promise((resolve) => {
       const xhr = new XMLHttpRequest();
@@ -552,14 +560,20 @@ export class Engine {
       xhr.upload.addEventListener('progress', onProg);
       xhr.addEventListener('loadend', () => {
         this._xhrs.delete(xhr);
+        st.aborters.delete(xhr);
+        clearTimeout(hardTimer);
         resolve();
       });
       this._xhrs.add(xhr);
+      st.aborters.add(xhr);               // killAll() now reaches uploads
+      const hardTimer = setTimeout(() => { try { xhr.abort(); } catch { /* noop */ } }, UL_HARD_TIMEOUT);
       xhr.open('POST', `${this.origin(port)}/__up?r=${Math.random()}`, true);
       try {
         xhr.send(new Blob([this.#payload().subarray(0, size)]));
       } catch { /* sync send failure — settle quietly */
         this._xhrs.delete(xhr);
+        st.aborters.delete(xhr);
+        clearTimeout(hardTimer);
         resolve();
       }
     });
@@ -581,8 +595,8 @@ export class Engine {
       }
       if (performance.now() >= deadline) return;
       const dt = performance.now() - t0;
-      if (dt < 1200 && size < UL_MAX) size = Math.min(size * 2, UL_MAX);
-      else if (dt > 6000 && size > (1 << 20)) size = Math.max(size >> 1, 1 << 20);
+      if (dt < 1500 && size < UL_MAX) size = Math.min(size * 2, UL_MAX);
+      else if (dt > 4000 && size > UL_MIN) size = Math.max(size >> 1, UL_MIN);
     }
   }
 }

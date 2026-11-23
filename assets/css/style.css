@@ -26,8 +26,8 @@
   --acc-btn-hi: rgba(255, 255, 255, .28);   /* inset top light = depth, not gradient */
   --dl: #22d3ee;                   /* download — cyan */
   --ul: #a78bfa;                   /* upload — violet */
-  --pg: #fbbf24;                   /* ping — amber */
-  --jt: #fb923c;                   /* jitter — orange */
+  --pg: #eef2fa;                   /* ping — neutral white */
+  --jt: #c3cddd;                   /* jitter — neutral */
   --ok: #34d399;
   --warn: #fbbf24;
   --bad: #f87171;
@@ -37,9 +37,9 @@
   --tick-minor: rgba(148, 163, 194, .16);
   --tick-label: #8b97b0;
 
-  --sans: "IBM Plex Sans Arabic", "Segoe UI", system-ui, sans-serif;
-  --mono: "IBM Plex Sans Arabic", ui-monospace, "Cascadia Mono", monospace;   /* display numerals */
-  --disp: "IBM Plex Sans Arabic", system-ui, sans-serif;                       /* wordmark & hero digits */
+  --sans: "Rubik", "Segoe UI", system-ui, sans-serif;
+  --mono: "Rubik", ui-monospace, "Cascadia Mono", monospace;   /* display numerals */
+  --disp: "Rubik", system-ui, sans-serif;                       /* wordmark & hero digits */
 
   --r-sm: 10px;
   --r-md: 14px;
@@ -467,9 +467,9 @@ html[lang="en"] .m-head { letter-spacing: .07em; text-transform: uppercase; font
 #m-upload.on .m-head, #m-upload.on .m-head svg { color: var(--ul); }
 #m-upload.on .num { color: #c4b5fd; }
 #m-ping.on .m-head, #m-ping.on .m-head svg { color: var(--pg); }
-#m-ping.on .num { color: #fcd34d; }
+#m-ping.on .num { color: var(--txt); }
 #m-jitter.on .m-head, #m-jitter.on .m-head svg { color: var(--jt); }
-#m-jitter.on .num { color: #fda4af; }
+#m-jitter.on .num { color: var(--txt); }
 #m-loss.on .m-head, #m-loss.on .m-head svg { color: var(--ok); }
 #m-loss.on .num { color: #6ee7b7; }
 #m-loss.on .num.bad { color: var(--bad); }

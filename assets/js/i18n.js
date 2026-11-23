@@ -46,9 +46,9 @@ export const DICT = {
       shortcuts: 'اختصارات لوحة المفاتيح',
       kStart: 'بدء/إيقاف الاختبار', kSettings: 'الإعدادات', kDetails: 'التفاصيل',
       how: 'كيف نقيس؟',
-      howBody: 'يعمل التنزيل والرفع بتدفقات متوازية موزَّعة على عدة اتصالات TCP مستقلة، مع استبعاد مرحلة التسارع، ثم حساب النتيجة بمنهجية Speedtest نفسها: ترتيب العينات، استبعاد الأبطأ (~22%)، حذف أسرع عينتين، ومتوسط الباقي — لذا تتطابق القراءات تقريباً.',
+      howBody: 'يعمل التنزيل والرفع بتدفقات متوازية موزَّعة على عدة اتصالات TCP مستقلة، مع استبعاد مرحلة التسارع، ثم حساب النتيجة بمنهجية الوسط المقتطع المعتمدة عالمياً: ترتيب العينات، استبعاد الأبطأ (~22%)، حذف أسرع عينتين، ومتوسط الباقي.',
       whyDiff: 'لماذا قد تختلف النتيجة عن تطبيقات أخرى؟',
-      whyDiffBody: 'اعتمدنا في الإصدار 2.3 منهجية Speedtest.net نفسها في حساب النتيجة النهائية، لذا يجب أن تتطابق القراءات تقريباً. الفروقات الصغيرة (±10%) طبيعية بين أي أداتين، والكبيرة تعني غالباً اختلاف المسار أو ازدحام لحظي.',
+      whyDiffBody: 'نعتمد منهجية الوسط المقتطع المعتمدة في أشهر أدوات قياس السرعة عالمياً: تُستبعد أبطأ العينات وأسرعها ثم يُحسب وسط الباقي، لذا قد تختلف نتيجتنا قليلاً عن أدوات تعرض المتوسط البسيط',
     },
 
     d: {
@@ -246,9 +246,9 @@ export const DICT = {
       shortcuts: 'Keyboard shortcuts',
       kStart: 'start/stop the test', kSettings: 'settings', kDetails: 'details',
       how: 'How we measure',
-      howBody: 'Download and upload run as parallel streams spread across several independent TCP connections, the ramp-up window is excluded, and the final figure follows Speedtest\'s documented method: samples are sorted, the slowest ~22% are discarded, the two fastest are removed, and the mean of the rest is reported.',
+      howBody: 'Download and upload run as parallel streams spread across several independent TCP connections, the ramp-up window is excluded, and the final figure follows the industry-standard trimmed-mean method: samples are sorted, the slowest ~22% are discarded, the two fastest are removed, and the mean of the rest is reported.',
       whyDiff: 'Why can results differ from other apps?',
-      whyDiffBody: 'As of v2.3 we compute the final number with the same methodology as Speedtest.net, so readings should closely match. Small differences (±10%) are normal between any two tools; larger gaps usually come from path differences or momentary congestion.',
+      whyDiffBody: 'We compute the final number with the trimmed-mean methodology used by the major global speed-test tools: the slowest samples and the two fastest are discarded, then the mean of the rest is reported — so our figure can differ slightly from tools that show a plain average',
     },
 
     d: {

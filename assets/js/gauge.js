@@ -1,5 +1,5 @@
 /* SPOS Net — speed gauge
- * 270° dial, piecewise (Ookla-like) scale, tapered needle with
+ * 270° dial, piecewise scale, tapered needle with
  * exponential smoothing, gradient value arc with a soft glow,
  * tip dot and a dim resting state for the pre-start screen.
  */
@@ -74,7 +74,7 @@ export class Gauge {
       const label = el('text', {
         x: lx, y: ly, 'text-anchor': 'middle', 'dominant-baseline': 'middle',
         fill: 'var(--tick-label)', 'font-size': '14.5',
-        'font-family': "'IBM Plex Sans Arabic', ui-monospace, monospace",
+        'font-family': "'Rubik', ui-monospace, monospace",
         'font-weight': '700',
       }, tickG);
       label.textContent = String(SEGS[i]);

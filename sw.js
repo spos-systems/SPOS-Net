@@ -1,39 +1,30 @@
-/* SPOS Net v5 service worker — installable PWA with offline app shell.
+/* SPOS Net v7 service worker — installable PWA with offline app shell.
  *
- * Strategy (v5 — "updates land on the first visit"):
- *   • Precache the app shell (HTML, CSS, JS, fonts, icons, manifest).
+ * Strategy (v7 — "updates land on the first visit"):
+ *   • Precache the app shell (HTML, CSS, JS, icons, manifest).
  *   • Navigations AND code assets (CSS/JS): NETWORK-FIRST — a fresh
  *     deploy is what the user sees on the very next visit, cache is
- *     only the offline fallback. (v4 served stale-while-revalidate for
- *     code, which could show yesterday's design/font for a visit.)
- *   • Fonts & images: cache-first — they are version-stamped file names
- *     (-v5), so a hit is always the current version and the URL space
- *     changes with every release. No stale font can ever be served.
+ *     only the offline fallback.
+ *   • Fonts: BASE64-INLINED in fonts.css since v7 — there is no font
+ *     request to intercept anymore; the glyphs ride the stylesheet.
+ *   • Images & any stray static file: cache-first (immutable assets).
  *   • Cross-origin requests (Cloudflare measurement endpoints, RIPEstat,
  *     APIs) are never intercepted.
  *   • All caches from older versions are purged on activate.
  */
-const VERSION = 'sposnet-v6.0.0';
+const VERSION = 'sposnet-v7.0.0';
 
 const SHELL = [
   './',
   './index.html',
   './manifest.webmanifest',
   './404.html',
-  './assets/css/fonts.css?v=5',
-  './assets/css/style.css?v=5',
-  './assets/js/app.js?v=5',
+  './assets/css/fonts.css?v=7',
+  './assets/css/style.css?v=7',
+  './assets/js/app.js?v=7',
   './assets/js/engine.js',
   './assets/js/gauge.js',
   './assets/js/i18n.js',
-  './assets/fonts/plex-arabic-400-v5.woff2',
-  './assets/fonts/plex-arabic-500-v5.woff2',
-  './assets/fonts/plex-arabic-600-v5.woff2',
-  './assets/fonts/plex-arabic-700-v5.woff2',
-  './assets/fonts/plex-latin-400-v5.woff2',
-  './assets/fonts/plex-latin-500-v5.woff2',
-  './assets/fonts/plex-latin-600-v5.woff2',
-  './assets/fonts/plex-latin-700-v5.woff2',
   './assets/img/company-logo.png',
   './assets/img/favicon.svg',
   './assets/img/favicon-32.png',

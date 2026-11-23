@@ -20,7 +20,7 @@ License: MIT
 
 - Download speed: parallel streams spread across up to 9 independent TCP connections — Cloudflare speed endpoints on multiple HTTPS ports (443/2053/2083/2087/2096/8443) plus a 16 MB incompressible test file served from the site's own origin (GitHub Pages/Fastly), jsDelivr and raw.githubusercontent mirrors, so the line stays fully saturated even when an ISP filters the alternate ports.
 - Upload speed: parallel XHR POST streams with real-time upload progress — bytes are counted the moment they hit the wire; adaptive chunk size; same ramp exclusion and windowing.
-- Final figure (download & upload): Speedtest.net's documented methodology — instantaneous samples over the stable window are sorted, the two fastest are removed and the slowest ~22% are discarded; the mean of the remainder is reported. Sustained average and best 500 ms peak are also shown in the details.
+- Final figure (download & upload): the industry-standard trimmed-mean methodology — instantaneous samples over the stable window are sorted, the two fastest are removed and the slowest ~22% are discarded; the mean of the remainder is reported. Sustained average and best 500 ms peak are also shown in the details.
 - Latency (ping): time-to-first-byte of empty requests; min / median / average / max reported.
 - Latency under load: separate averages while downloading and while uploading, plus an A+…F bufferbloat grade — shown in the post-test connection panel.
 - Jitter: mean absolute difference between consecutive latency samples.
@@ -50,9 +50,9 @@ License: MIT
 
 ## How it works
 
-The site is fully static (zero dependencies, no build step) and performs all measurements from the visitor's browser. Download uses the public CORS-enabled Cloudflare speed endpoint (`speed.cloudflare.com/__down`) on HTTPS ports 443/2053/2083/2087/2096/8443 plus a self-hosted 16 MB incompressible test file (`/assets/testdata/spos-16mb.bin`) mirrored on jsDelivr and raw.githubusercontent — each host:port pair is a separate TCP connection. Upload POSTs to `speed.cloudflare.com/__up`. The final number uses Speedtest.net's documented trimmed-mean methodology (drop the two fastest samples, discard the slowest ~22%, average the rest). No accounts, no ads, no tracking, no server-side logging.
+The site is fully static (zero dependencies, no build step) and performs all measurements from the visitor's browser. Download uses the public CORS-enabled Cloudflare speed endpoint (`speed.cloudflare.com/__down`) on HTTPS ports 443/2053/2083/2087/2096/8443 plus a self-hosted 16 MB incompressible test file (`/assets/testdata/spos-16mb.bin`) mirrored on jsDelivr and raw.githubusercontent — each host:port pair is a separate TCP connection. Upload POSTs to `speed.cloudflare.com/__up`. The final number uses major speed-test tools's documented trimmed-mean methodology (drop the two fastest samples, discard the slowest ~22%, average the rest). No accounts, no ads, no tracking, no server-side logging.
 
-Why results can differ between tools: as of v3.0 the final figure uses the same methodology as Speedtest.net, so readings should closely match. Small differences (±10%) between any two tools are normal; larger gaps usually come from path differences or momentary congestion.
+Why results can differ between tools: the final figure uses the industry-standard trimmed-mean methodology.net, so readings should closely match. Small differences (±10%) between any two tools are normal; larger gaps usually come from path differences or momentary congestion.
 
 ## Links
 

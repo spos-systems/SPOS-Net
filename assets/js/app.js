@@ -8,11 +8,13 @@ const $ = (s, r = document) => r.querySelector(s);
 const $$ = (s, r = document) => [...r.querySelectorAll(s)];
 
 const SITE_URL = 'https://net.spos.ly/';
-const VERSION = '5.0.0';
+const VERSION = '7.0.0';
 
-/* self-hosted webfonts (see assets/css/fonts.css) */
-const F_DISP = "'IBM Plex Sans Arabic', system-ui, sans-serif";   /* numerals, wordmark, dates */
-const F_TXT = "'IBM Plex Sans Arabic', system-ui, sans-serif";      /* Arabic labels */
+/* self-hosted webfonts — Rubik is BASE64-INLINED in assets/css/fonts.css (v7):
+ * the font bytes ship inside the stylesheet itself, so no cache layer,
+ * service worker, proxy or content blocker can ever block them. */
+const F_DISP = "'Rubik', system-ui, sans-serif";   /* numerals, wordmark, dates */
+const F_TXT = "'Rubik', system-ui, sans-serif";      /* Arabic labels */
 
 const DEFAULTS = { lang: 'ar', unit: 'mbps', duration: 12, streams: 8, loaded: true, loss: true, shareFmt: 'square' };
 
@@ -145,10 +147,10 @@ async function initMeta() {
 /* ── gauge + readout ─────────────────────────────────────── */
 
 /* each phase owns its needle gradient — download cyan→blue, upload a
-   pure violet family (no fuchsia), ping amber, done: cyan→blue.
-   The dial announces the phase; nothing ever swings pink. */
+   pure violet family, and the latency phase uses the cyan family too:
+   exactly TWO accent hues on the whole dial, nothing else. */
 const PHASE_COLORS = {
-  ping: ['#fcd34d', '#f59e0b', '#fde68a'],
+  ping: ['#22d3ee', '#3b82f6', '#67e8f9'],
   download: ['#22d3ee', '#3b82f6', '#67e8f9'],
   upload: ['#a78bfa', '#8b5cf6', '#c4b5fd'],
   done: ['#22d3ee', '#3b82f6', '#67e8f9'],
@@ -348,11 +350,37 @@ async function startTest() {
   setPhasePill('ping');
 
   const runSettings = { ...settings, meta: state.meta };
+
+  /* live smoother (v7): the raw 1-second rolling window flickers wildly
+     (0 → 30 → 0) whenever a stream stalls between requests. Instead we
+     feed the dial a running TRIMMED MEAN of the last ~4 s of samples —
+     the same recipe the engine uses for the final figure — lightly
+     EMA-damped. The dial, the big readout and the metric tiles therefore
+     move together AND agree with the number the phase settles on. */
+  const live = { ema: null, samples: [], t0: 0 };
+  const liveValue = (kind, w1s) => {
+    if (!(w1s > 0)) return live.ema;              // ignore empty windows
+    if (!live.t0) live.t0 = performance.now();
+    live.samples.push(w1s);
+    if (live.samples.length > 44) live.samples.shift();   // ≈ 4 s @ 90 ms
+    const pool = performance.now() - live.t0 > 1500 ? live.samples : [w1s];
+    const s = [...pool].sort((a, b) => a - b);    // running trimmed mean:
+    s.splice(Math.max(0, s.length - 2), 2);       //  drop 2 fastest
+    const cut = Math.floor(s.length * 0.22);      //  drop slowest 22 %
+    const kept = s.slice(cut);
+    const est = kept.length ? kept.reduce((a, b) => a + b, 0) / kept.length : w1s;
+    live.ema = live.ema == null ? est : live.ema + (est - live.ema) * 0.22;
+    return live.ema;
+  };
+
   const hooks = {
     phase: (ph) => {
       phaseUI(ph);
       if (ph === 'ping') SPARK.begin();
       else if (ph) SPARK.mark(ph);
+      if (ph === 'download' || ph === 'upload') {
+        live.ema = null; live.samples = []; live.t0 = 0;   // fresh phase
+      }
     },
     pingSample: (done, total, ms, med) => {
       gauge.setProgress(done / total);
@@ -373,15 +401,29 @@ async function startTest() {
     loadedSample: () => { /* aggregated into details */ },
     sample: (kind, w1s, w300) => {
       SPARK.add(kind, w300);
-      gauge.setValue(w1s);
-      setReadout(fmtSpeed(w1s), t(`u.${settings.unit}`));
+      const v = liveValue(kind, w1s);
+      if (v == null) return;
+      gauge.setValue(v);
+      setReadout(fmtSpeed(v), t(`u.${settings.unit}`));
       const cell = kind === 'down' ? $('#m-download') : $('#m-upload');
-      cell.querySelector('.num').textContent = fmtSpeed(w1s);
+      cell.querySelector('.num').textContent = fmtSpeed(v);
       cell.classList.add('on');
-      updateRunTitle(w1s);
+      updateRunTitle(v);
     },
-    downloadDone: (d) => { $('#m-download .num').textContent = fmtSpeed(d.avg); },
-    uploadDone: (u) => { $('#m-upload .num').textContent = fmtSpeed(u.avg); },
+    /* phase end: lock the dial, the readout AND the tile onto the final
+       settled figure — the three can no longer disagree */
+    downloadDone: (d) => {
+      live.ema = d.avg;
+      gauge.setValue(d.avg);
+      setReadout(fmtSpeed(d.avg), t(`u.${settings.unit}`));
+      $('#m-download .num').textContent = fmtSpeed(d.avg);
+    },
+    uploadDone: (u) => {
+      live.ema = u.avg;
+      gauge.setValue(u.avg);
+      setReadout(fmtSpeed(u.avg), t(`u.${settings.unit}`));
+      $('#m-upload .num').textContent = fmtSpeed(u.avg);
+    },
     done: (result) => finishTest(result),
     aborted: () => { toast(t('t.aborted')); resetUI(); },
     error: (code) => {
@@ -624,7 +666,7 @@ function histLabel(ts) {
   return `${String(d.getHours()).padStart(2, '0')}:${String(d.getMinutes()).padStart(2, '0')} · ${d.getDate()}/${d.getMonth() + 1}`;
 }
 
-/* ── connection panel (main page, Ookla-style) ───────────── */
+/* ── connection panel (main page) ────────────────────────── */
 
 let ipRevealed = false;
 
@@ -824,7 +866,7 @@ function closeDrawers() {
 
 /* ── share / export ──────────────────────────────────────── */
 
-/* Ookla-style short result identifier, derived from the result itself */
+/* short result identifier, derived from the result itself */
 function resultId(c) {
   let h = 0x811c9dc5;
   const s = `sp|${c.ts}|${c.dl}|${c.ul}|${c.pg}|${c.jt}`;
@@ -1451,7 +1493,7 @@ function boot() {
    * the ACTIVE font in the footer + about drawer so the state is visible
    * at a glance — no DevTools needed. */
   (async () => {
-    const FAM = 'IBM Plex Sans Arabic';
+    const FAM = 'Rubik';
     const probe = () => {
       try { return document.fonts.check(`600 16px "${FAM}"`, 'اختبار السرعة 123'); }
       catch { return false; }
@@ -1460,7 +1502,7 @@ function boot() {
     if (!probe()) {
       const link = document.createElement('link');
       link.rel = 'stylesheet';
-      link.href = `assets/css/fonts.css?v=5&r=${Date.now()}`;
+      link.href = `assets/css/fonts.css?v=7&r=${Date.now()}`;
       document.head.appendChild(link);
       try { await document.fonts.load(`600 16px "${FAM}"`, 'اختبار السرعة 123'); } catch { /* ignore */ }
       try { await document.fonts.ready; } catch { /* ignore */ }
@@ -1472,7 +1514,7 @@ function boot() {
       foot.classList.add(ok ? 'ok' : 'bad');
       foot.textContent = ok ? FAM : (getLang() === 'ar' ? 'خط النظام (فشل تحميل الخط)' : 'System font (custom font failed)');
       foot.title = ok
-        ? (getLang() === 'ar' ? 'الخط النشط: IBM Plex Sans Arabic — مستضاف ذاتياً' : 'Active font: IBM Plex Sans Arabic — self-hosted')
+        ? (getLang() === 'ar' ? 'الخط النشط: Rubik — مضمّن داخل ملف التنسيق ذاته' : 'Active font: Rubik — inlined in the stylesheet itself')
         : (getLang() === 'ar' ? 'تعذّر تحميل الخط المخصص، يُستخدم خط النظام' : 'Custom font failed to load; system font in use');
     }
     const tag = $('#font-tag');

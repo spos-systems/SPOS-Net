@@ -45,11 +45,10 @@
   <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
   <meta name="apple-mobile-web-app-title" content="SPOS Net">
   <link rel="manifest" href="manifest.webmanifest">
-  <link rel="preload" as="font" type="font/woff2" crossorigin href="assets/fonts/plex-arabic-400-v5.woff2">
-  <link rel="preload" as="font" type="font/woff2" crossorigin href="assets/fonts/plex-arabic-600-v5.woff2">
-  <link rel="preload" as="font" type="font/woff2" crossorigin href="assets/fonts/plex-latin-700-v5.woff2">
-  <link rel="stylesheet" href="assets/css/fonts.css?v=6">
-  <link rel="stylesheet" href="assets/css/style.css?v=6">
+
+
+  <link rel="stylesheet" href="assets/css/fonts.css?v=7">
+  <link rel="stylesheet" href="assets/css/style.css?v=7">
 
   <script type="application/ld+json">
   {
@@ -112,7 +111,7 @@
       },
       {
         "@type": "Question",
-        "name": "لماذا قد تختلف النتيجة عن تطبيقات أخرى مثل Speedtest؟",
+        "name": "لماذا قد تختلف النتيجة عن أدوات القياس الأخرى؟",
         "acceptedAnswer": { "@type": "Answer", "text": "الأدوات المختلفة تستخدم خوادم ومناهج مختلفة. بعضها يقيس إلى خادم محلي داخل شبكة مزوّدك عبر مسار قصير فتظهر أرقام أعلى، بينما يقيس SPOS Net إلى أقرب نقطة Cloudflare العالمية عبر مسار واقعي شامل يشبه الاستخدام الفعلي. فروقات صغيرة (حوالي ±10%) طبيعية بين أي أداتين، ويعمل SPOS Net باتصالات متوازية متعددة لتعبئة الخط بالكامل مثل التطبيقات الاحترافية." }
       },
       {
@@ -277,7 +276,7 @@
         </button>
       </section>
 
-      <!-- ═══ Connection panel (Ookla-style, after the test) ═══ -->
+      <!-- ═══ Connection panel (after the test) ═══ -->
       <section class="connpanel" id="conn-panel" hidden>
         <div class="cp-head">
           <svg viewBox="0 0 24 24" aria-hidden="true" fill="none" stroke="currentColor" stroke-width="1.7" stroke-linecap="round" stroke-linejoin="round"><path d="M12 8a4 4 0 0 0-4 4c0 1.1-.9 2-2 2s-2-.9-2-2V9.8a2 2 0 0 1 .3-1.1l1.3-2A2 2 0 0 1 7.3 6h9.4a2 2 0 0 1 1.7.9l1.3 2a2 2 0 0 1 .3 1.1V12c0 1.1-.9 2-2 2s-2-.9-2-2a4 4 0 0 0-4-4Z"/><path d="M5 18h14"/></svg>
@@ -325,7 +324,7 @@
         <span data-i18n="f.tag">أداة مفتوحة المصدر لقياس سرعة الإنترنت</span>
       </div>
       <span class="foot-sep" aria-hidden="true"></span>
-      <span class="foot-font" id="foot-font" title="IBM Plex Sans Arabic" lang="en">IBM Plex Sans Arabic</span>
+      <span class="foot-font" id="foot-font" title="Rubik" lang="en">Rubik</span>
       <span class="foot-sep" aria-hidden="true"></span>
       <a class="foot-credit" href="https://spos.ly" target="_blank" rel="noopener">
         <span data-i18n="f.dev">من تطوير</span>
@@ -407,9 +406,9 @@
       </div>
       <div class="about-block">
         <div class="set-label" data-i18n="s.how">كيف نقيس؟</div>
-        <p data-i18n="s.howBody">يعمل التنزيل والرفع بتدفقات متوازية موزَّعة على عدة اتصالات TCP مستقلة، مع استبعاد مرحلة التسارع، ثم حساب النتيجة بالمنهجية المعتمدة في Speedtest: ترتيب العينات واستبعاد الأبطأ وحذف أسرع عينتين ومتوسط الباقي.</p>
+        <p data-i18n="s.howBody">يعمل التنزيل والرفع بتدفقات متوازية موزَّعة على عدة اتصالات TCP مستقلة، مع استبعاد مرحلة التسارع، ثم حساب النتيجة بمنهجية الوسط المقتطع المعتمدة عالمياً: ترتيب العينات واستبعاد الأبطأ وحذف أسرع عينتين ومتوسط الباقي.</p>
         <div class="set-label" style="margin-top:14px" data-i18n="s.whyDiff">لماذا قد تختلف النتيجة عن تطبيقات أخرى؟</div>
-        <p data-i18n="s.whyDiffBody">اعتمدنا في الإصدار 2.3 منهجية Speedtest.net نفسها في حساب النتيجة النهائية، لذا يجب أن تتطابق القراءات تقريباً. الفروقات الصغيرة (±10%) طبيعية بين أي أداتين، والكبيرة تعني غالباً اختلاف المسار أو ازدحام لحظي.</p>
+        <p data-i18n="s.whyDiffBody">نعتمد منهجية الوسط المقتطع المعتمدة عالمياً في حساب النتيجة النهائية، لذا تتشابه القراءات مع الأدوات الاحترافية. الفروقات الصغيرة (±10%) طبيعية بين أي أداتين، والكبيرة تعني غالباً اختلاف المسار أو ازدحام لحظي.</p>
         <p class="about-credit"><span id="ver-tag">SPOS Net v5.0.0</span> · <span id="font-tag">…</span> · <a href="https://spos.ly" target="_blank" rel="noopener">SPOS — صولة للأنظمة</a></p>
       </div>
     </div>
@@ -516,6 +515,6 @@
 
   <noscript><div class="nojs">يتطلب SPOS Net تفعيل JavaScript لتشغيل اختبار السرعة. — SPOS Net requires JavaScript to run the speed test.</div></noscript>
 
-  <script type="module" src="assets/js/app.js?v=6"></script>
+  <script type="module" src="assets/js/app.js?v=7"></script>
 </body>
 </html>
