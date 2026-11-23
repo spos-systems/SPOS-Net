@@ -143,6 +143,10 @@ html[data-theme="dark"] #btn-theme .ic-sun { display: block; }
 html[data-theme="dark"] #btn-theme .ic-moon { display: none; }
 .app {
   display: grid;
+  /* minmax(0,·): the column may shrink below the min-content of its rows —
+     otherwise the topbar's buttons inflate the track and push the whole
+     page past the right/left edge on narrow screens (RTL clip bug). */
+  grid-template-columns: minmax(0, 1fr);
   grid-template-rows: auto 1fr auto;
   min-height: 100vh;
   min-height: 100svh;
@@ -184,7 +188,23 @@ html[data-theme="dark"] #btn-theme .ic-moon { display: none; }
   color: var(--txt);
 }
 
-.topbar-actions { display: flex; align-items: center; gap: 6px; }
+.topbar-actions {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  min-width: 0;                       /* allow the row to shrink… */
+  overflow-x: auto;                   /* …and scroll horizontally when it can't fit */
+  scrollbar-width: none;              /* Firefox — the bar scrolls by touch, no visible scrollbar */
+  -webkit-overflow-scrolling: touch;
+  overscroll-behavior-x: contain;     /* a horizontal swipe here must not navigate back */
+}
+.topbar-actions::-webkit-scrollbar { display: none; }  /* Chromium/Safari */
+.topbar-actions > * { flex: none; }   /* buttons keep their size — they never squish */
+
+/* keep focus rings visible above/below the scroll container */
+.topbar-actions { padding-block: 4px; margin-block: -4px; }
+
+.brand { flex: none; }                /* the wordmark never shrinks or scrolls away */
 
 .icon-btn {
   width: 36px; height: 36px;

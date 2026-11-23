@@ -49,8 +49,8 @@
 
   <link rel="preload" href="assets/fonts/nkufi-arabic-v9.woff2" as="font" type="font/woff2" crossorigin>
   <link rel="preload" href="assets/fonts/nkufi-latin-v9.woff2" as="font" type="font/woff2" crossorigin>
-  <link rel="stylesheet" href="assets/css/fonts.css?v=9.1">
-  <link rel="stylesheet" href="assets/css/style.css?v=9.1">
+  <link rel="stylesheet" href="assets/css/fonts.css?v=9.2">
+  <link rel="stylesheet" href="assets/css/style.css?v=9.2">
   <script>/* apply the saved theme before first paint — no flash (default: dark) */try{var _t=localStorage.getItem('spos-theme');if(_t!=='dark'&&_t!=='light')_t='dark';document.documentElement.dataset.theme=_t;var _m=document.querySelector('meta[name="theme-color"]');if(_m)_m.content=_t==='light'?'#f2f3f5':'#0b0e14';}catch(e){}</script>
 
   <script type="application/ld+json">
@@ -326,15 +326,15 @@
     <footer class="foot">
       <div class="foot-side">
         <svg class="foot-mark" viewBox="0 0 64 64" aria-hidden="true">
-            <rect x="3" y="3" width="58" height="58" rx="15" fill="#ffffff" stroke="#dfe3e8"/>
-            <path d="M 18.57 45.43 A 19 19 0 1 1 45.43 45.43" fill="none" stroke="#0aa0cc" stroke-width="6" stroke-linecap="round"/>
-            <line x1="32" y1="32" x2="36.4" y2="16.9" stroke="#20242c" stroke-width="4" stroke-linecap="round"/>
-            <circle cx="32" cy="32" r="3" fill="#20242c"/>
+            <rect class="bm-bg" x="3" y="3" width="58" height="58" rx="15"/>
+            <path class="bm-arc" d="M 18.57 45.43 A 19 19 0 1 1 45.43 45.43" fill="none" stroke-width="6" stroke-linecap="round"/>
+            <line class="bm-needle" x1="32" y1="32" x2="36.4" y2="16.9" stroke-width="4" stroke-linecap="round"/>
+            <circle class="bm-needle" cx="32" cy="32" r="3"/>
           </svg>
         <span data-i18n="f.tag">أداة مفتوحة المصدر لقياس سرعة الإنترنت</span>
       </div>
       <span class="foot-sep" aria-hidden="true"></span>
-      <span class="foot-ver" id="foot-ver" title="SPOS Net v9.1.0">v9.1.0</span>
+      <span class="foot-ver" id="foot-ver" title="SPOS Net v9.2.0">v9.2.0</span>
       <span class="foot-sep" aria-hidden="true"></span>
       <span class="foot-font" id="foot-font" title="Noto Kufi Arabic" lang="en">Noto Kufi Arabic</span>
       <span class="foot-sep" aria-hidden="true"></span>
@@ -421,7 +421,7 @@
         <p data-i18n="s.howBody">يعمل التنزيل والرفع بتدفقات متوازية موزَّعة على عدة اتصالات TCP مستقلة، مع استبعاد مرحلة التسارع، ثم حساب النتيجة بمنهجية الوسط المقتطع المعتمدة عالمياً: ترتيب العينات واستبعاد الأبطأ وحذف أسرع عينتين ومتوسط الباقي.</p>
         <div class="set-label" style="margin-top:14px" data-i18n="s.whyDiff">لماذا قد تختلف النتيجة عن تطبيقات أخرى؟</div>
         <p data-i18n="s.whyDiffBody">نعتمد منهجية الوسط المقتطع المعتمدة عالمياً في حساب النتيجة النهائية، لذا تتشابه القراءات مع الأدوات الاحترافية. الفروقات الصغيرة (±10%) طبيعية بين أي أداتين، والكبيرة تعني غالباً اختلاف المسار أو ازدحام لحظي.</p>
-        <p class="about-credit"><span id="ver-tag">SPOS Net v9.1.0</span> · <span id="font-tag">…</span> · <a href="https://spos.ly" target="_blank" rel="noopener">SPOS — صولة للأنظمة</a></p>
+        <p class="about-credit"><span id="ver-tag">SPOS Net v9.2.0</span> · <span id="font-tag">…</span> · <a href="https://spos.ly" target="_blank" rel="noopener">SPOS — صولة للأنظمة</a></p>
       </div>
     </div>
   </aside>
@@ -527,6 +527,6 @@
 
   <noscript><div class="nojs">يتطلب SPOS Net تفعيل JavaScript لتشغيل اختبار السرعة. — SPOS Net requires JavaScript to run the speed test.</div></noscript>
 
-  <script type="module" src="assets/js/app.js?v=9.1"></script>
+  <script type="module" src="assets/js/app.js?v=9.2"></script>
 </body>
 </html>

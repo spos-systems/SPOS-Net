@@ -8,7 +8,7 @@ const $ = (s, r = document) => r.querySelector(s);
 const $$ = (s, r = document) => [...r.querySelectorAll(s)];
 
 const SITE_URL = 'https://net.spos.ly/';
-const VERSION = '9.1.0';
+const VERSION = '9.2.0';
 
 /* ── theme (dark ⇄ light) ───────────────────────────────────
    Dark is the default look; the topbar toggle switches to light.
@@ -1538,7 +1538,7 @@ function boot() {
     if (!probe()) {
       const link = document.createElement('link');
       link.rel = 'stylesheet';
-      link.href = `assets/css/fonts.css?v=9.1&r=${Date.now()}`;
+      link.href = `assets/css/fonts.css?v=9.2&r=${Date.now()}`;
       document.head.appendChild(link);
       try { await document.fonts.load(`600 16px "${FAM}"`, 'اختبار السرعة 123'); } catch { /* ignore */ }
       try { await document.fonts.ready; } catch { /* ignore */ }
