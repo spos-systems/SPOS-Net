@@ -1,7 +1,9 @@
-/* SPOS Net — speed gauge
- * 270° dial, piecewise scale, tapered needle with
- * exponential smoothing, gradient value arc with a soft glow,
- * tip dot and a dim resting state for the pre-start screen.
+/* SPOS Net — speed gauge (v8, light "Clarity" theme)
+ * 270° dial, piecewise scale, thin ink needle with exponential
+ * smoothing, flat gradient value arc (no glow — the light theme
+ * reads clean), tip dot and a dim resting state for the pre-start
+ * screen. The dial is driven by the SAME smoothed figure the
+ * readout and tiles show, so all three always agree.
  */
 
 const NS = 'http://www.w3.org/2000/svg';
@@ -49,74 +51,73 @@ export class Gauge {
 
     const defs = el('defs', {}, s);
     this.grad = el('linearGradient', { id: 'g-grad', x1: '0', y1: '0', x2: '1', y2: '0' }, defs);
-    this.stopA = el('stop', { offset: '0', 'stop-color': '#22d3ee' }, this.grad);
-    this.stopB = el('stop', { offset: '1', 'stop-color': '#3b82f6' }, this.grad);
+    this.stopA = el('stop', { offset: '0', 'stop-color': '#29b6f6' }, this.grad);
+    this.stopB = el('stop', { offset: '1', 'stop-color': '#26c6da' }, this.grad);
 
-    /* soft glow behind the value arc — matches the live phase hue */
-    const filter = el('filter', { id: 'g-glow', x: '-60%', y: '-60%', width: '220%', height: '220%' }, defs);
-    this.glow = el('feDropShadow', { dx: '0', dy: '0', stdDeviation: '6', 'flood-color': '#22d3ee', 'flood-opacity': '.42' }, filter);
+    /* soft drop shadow under the needle only — flat design, no arc glow */
     const shadow = el('filter', { id: 'g-shadow', x: '-40%', y: '-40%', width: '180%', height: '180%' }, defs);
-    el('feDropShadow', { dx: '0', dy: '1.5', stdDeviation: '2.2', 'flood-color': '#000', 'flood-opacity': '.45' }, shadow);
+    el('feDropShadow', { dx: '0', dy: '1', stdDeviation: '1.6', 'flood-color': '#101828', 'flood-opacity': '.28' }, shadow);
 
     /* track */
     const [sx, sy] = pt(R, A0), [ex, ey] = pt(R, A0 + SWEEP);
     const d = `M ${sx} ${sy} A ${R} ${R} 0 1 1 ${ex} ${ey}`;
-    this.track = el('path', { d, fill: 'none', stroke: 'var(--gauge-track)', 'stroke-width': '12', 'stroke-linecap': 'round', class: 'g-track' }, s);
+    this.track = el('path', { d, fill: 'none', stroke: 'var(--gauge-track)', 'stroke-width': '14', 'stroke-linecap': 'round', class: 'g-track' }, s);
 
-    /* ticks + labels */
+    /* ticks + labels — strong majors, faint minors */
     const tickG = el('g', { class: 'g-ticks' }, s);
     const step = SWEEP / (SEGS.length - 1);
     for (let i = 0; i < SEGS.length; i++) {
       const a = A0 + step * i;
-      const [x1, y1] = pt(R + 9, a), [x2, y2] = pt(R + 17, a);
-      el('line', { x1, y1, x2, y2, stroke: 'var(--tick)', 'stroke-width': '2.2', 'stroke-linecap': 'round' }, tickG);
-      const [lx, ly] = pt(R + 32, a);
+      const [x1, y1] = pt(R + 8, a), [x2, y2] = pt(R + 19, a);
+      el('line', { x1, y1, x2, y2, stroke: 'var(--tick)', 'stroke-width': '2.6', 'stroke-linecap': 'round' }, tickG);
+      const [lx, ly] = pt(R + 34, a);
       const label = el('text', {
         x: lx, y: ly, 'text-anchor': 'middle', 'dominant-baseline': 'middle',
-        fill: 'var(--tick-label)', 'font-size': '14.5',
+        fill: 'var(--tick-label)', 'font-size': '15',
         'font-family': "'Rubik', ui-monospace, monospace",
-        'font-weight': '700',
+        'font-weight': '600',
       }, tickG);
       label.textContent = String(SEGS[i]);
       /* minor ticks (4 per segment) */
       if (i < SEGS.length - 1) {
         for (let k = 1; k < 5; k++) {
           const am = a + (step * k) / 5;
-          const [mx1, my1] = pt(R + 9, am), [mx2, my2] = pt(R + 13.5, am);
-          el('line', { x1: mx1, y1: my1, x2: mx2, y2: my2, stroke: 'var(--tick-minor)', 'stroke-width': '1.3' }, tickG);
+          const [mx1, my1] = pt(R + 8, am), [mx2, my2] = pt(R + 13, am);
+          el('line', { x1: mx1, y1: my1, x2: mx2, y2: my2, stroke: 'var(--tick-minor)', 'stroke-width': '1.4' }, tickG);
         }
       }
     }
 
-    /* value arc (glowing) */
+    /* value arc — flat gradient, no glow filter */
     this.arc = el('path', {
-      d, fill: 'none', stroke: 'url(#g-grad)', 'stroke-width': '13',
+      d, fill: 'none', stroke: 'url(#g-grad)', 'stroke-width': '15',
       'stroke-linecap': 'round', 'stroke-dasharray': '0 99999',
-      filter: 'url(#g-glow)',
     }, s);
     this.arcLen = this.arc.getTotalLength();
 
-    /* tip dot */
-    this.dot = el('circle', { r: '6.5', fill: '#fff', stroke: 'var(--bg)', 'stroke-width': '3.5', opacity: '0', filter: 'url(#g-shadow)' }, s);
+    /* tip dot — anchors the arc end, phase-hued ring */
+    this.dot = el('circle', { r: '6', fill: '#fff', stroke: '#26b8d6', 'stroke-width': '3.2', opacity: '0', filter: 'url(#g-shadow)' }, s);
 
-    /* needle — floating segment (inner radius 74 → R-26), never crosses
-       the center readout; no hub, the tip dot anchors the arc */
+    /* needle — floating segment (inner radius 78 → R-16), never crosses
+       the center readout; no hub, the tip dot anchors the arc.
+       NOTE: no filter here — a straight line has a zero-width bounding
+       box, so any percentage-based filter region collapses and the
+       line would render invisible (the v5–v7 "missing needle" bug). */
     this.needle = el('g', { opacity: '0' }, s);
-    const [nx1, ny1] = pt(74, 0), [nx2, ny2] = pt(R - 26, 0);
+    const [nx1, ny1] = pt(78, 0), [nx2, ny2] = pt(R - 16, 0);
     el('line', {
       x1: nx1, y1: ny1, x2: nx2, y2: ny2,
-      stroke: '#eef2fa', 'stroke-width': '3.6', 'stroke-linecap': 'round',
-      filter: 'url(#g-shadow)',
+      stroke: '#1a1e26', 'stroke-width': '4.4', 'stroke-linecap': 'round',
     }, this.needle);
-    this.hubDot = el('circle', { cx: CX, cy: CY, r: '0', fill: '#22d3ee' }, this.needle);
+    this.hubDot = el('circle', { cx: CX, cy: CY, r: '0', fill: '#26b8d6' }, this.needle);
   }
 
-  /* set phase colors: [start, end, glowHex] */
-  setColors(a, b, glow) {
+  /* set phase colors: [start, end, ringHex] */
+  setColors(a, b, ring) {
     this.stopA.setAttribute('stop-color', a);
     this.stopB.setAttribute('stop-color', b);
-    this.glow.setAttribute('flood-color', glow || b);
-    this.hubDot.setAttribute('fill', glow || b);
+    this.dot.setAttribute('stroke', ring || b);
+    this.hubDot.setAttribute('fill', ring || b);
   }
 
   /* drive by speed value (Mbps) */

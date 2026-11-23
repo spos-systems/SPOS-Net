@@ -8,8 +8,8 @@
   <meta name="keywords" content="اختبار سرعة الإنترنت, قياس سرعة النت, اختبار سرعة ليبيا, سرعة التحميل, سرعة الرفع, بنق, Ping, Jitter, Packet Loss, speed test Libya, فحص النت, SPOS Net, صولة للأنظمة">
   <meta name="author" content="صولة للأنظمة SPOS — https://spos.ly">
   <meta name="robots" content="index, follow, max-image-preview:large, max-snippet:-1">
-  <meta name="theme-color" content="#070a12">
-  <meta name="color-scheme" content="dark">
+  <meta name="theme-color" content="#f2f3f5">
+  <meta name="color-scheme" content="light">
   <meta name="application-name" content="SPOS Net">
   <meta name="geo.region" content="LY">
   <meta name="geo.placename" content="Libya">
@@ -47,8 +47,8 @@
   <link rel="manifest" href="manifest.webmanifest">
 
 
-  <link rel="stylesheet" href="assets/css/fonts.css?v=7">
-  <link rel="stylesheet" href="assets/css/style.css?v=7">
+  <link rel="stylesheet" href="assets/css/fonts.css?v=8">
+  <link rel="stylesheet" href="assets/css/style.css?v=8">
 
   <script type="application/ld+json">
   {
@@ -60,7 +60,7 @@
     "applicationCategory": "UtilitiesApplication",
     "operatingSystem": "Any",
     "browserRequirements": "Requires JavaScript",
-    "softwareVersion": "4.0.0",
+    "softwareVersion": "8.0.0",
     "isAccessibleForFree": true,
     "inLanguage": ["ar", "en"],
     "description": "Free, open-source internet speed test: download, upload, latency (idle and under load), jitter, estimated packet loss and a bufferbloat grade — with a live speed graph, professional options, result sharing and export.",
@@ -147,10 +147,10 @@
     <header class="topbar">
       <div class="brand" aria-label="SPOS Net">
         <svg class="brand-mark" viewBox="0 0 64 64" aria-hidden="true">
-          <rect x="3" y="3" width="58" height="58" rx="15" fill="#0f141f" stroke="#232c3f"/>
-          <path d="M 18.57 45.43 A 19 19 0 1 1 45.43 45.43" fill="none" stroke="#22d3ee" stroke-width="6" stroke-linecap="round"/>
-          <line x1="32" y1="32" x2="36.4" y2="16.9" stroke="#e9edf5" stroke-width="4" stroke-linecap="round"/>
-          <circle cx="32" cy="32" r="3" fill="#e9edf5"/>
+          <rect x="3" y="3" width="58" height="58" rx="15" fill="#ffffff" stroke="#dfe3e8"/>
+          <path d="M 18.57 45.43 A 19 19 0 1 1 45.43 45.43" fill="none" stroke="#0aa0cc" stroke-width="6" stroke-linecap="round"/>
+          <line x1="32" y1="32" x2="36.4" y2="16.9" stroke="#20242c" stroke-width="4" stroke-linecap="round"/>
+          <circle cx="32" cy="32" r="3" fill="#20242c"/>
         </svg>
         <span class="brand-name">SPOS&nbsp;Net</span>
       </div>
@@ -178,7 +178,6 @@
 
       <section class="gauge-zone">
         <div class="gauge" id="gauge-box">
-          <div class="gauge-halo" aria-hidden="true"></div>
           <svg id="gauge-svg" viewBox="0 0 400 400" role="img" aria-label="عداد السرعة" data-i18n-aria="aria.gauge"></svg>
           <div class="gauge-center">
             <div class="g-phase" id="g-phase" hidden>
@@ -224,40 +223,44 @@
       <canvas class="spark" id="spark" hidden aria-hidden="true"></canvas>
 
       <section class="metrics" aria-label="النتائج" data-i18n-aria="aria.metrics">
-        <div class="metric" id="m-ping">
-          <div class="m-head">
-            <svg viewBox="0 0 24 24" aria-hidden="true" fill="none" stroke="currentColor" stroke-width="1.7" stroke-linecap="round" stroke-linejoin="round"><path d="M22 12h-4l-3 9L9 3l-3 9H2"/></svg>
-            <span data-i18n="m.ping">الاستجابة</span>
+        <div class="m-tiles">
+          <div class="metric" id="m-ping">
+            <div class="m-head">
+              <svg viewBox="0 0 24 24" aria-hidden="true" fill="none" stroke="currentColor" stroke-width="1.7" stroke-linecap="round" stroke-linejoin="round"><path d="M22 12h-4l-3 9L9 3l-3 9H2"/></svg>
+              <span data-i18n="m.ping">الاستجابة</span>
+            </div>
+            <div class="m-val"><span class="num">—</span><span class="unit">ms</span></div>
           </div>
-          <div class="m-val"><span class="num">—</span><span class="unit">ms</span></div>
+          <div class="metric" id="m-download">
+            <div class="m-head">
+              <svg viewBox="0 0 24 24" aria-hidden="true" fill="none" stroke="currentColor" stroke-width="1.7" stroke-linecap="round" stroke-linejoin="round"><path d="M12 3v12m0 0 5-5m-5 5-5-5"/><path d="M5 21h14"/></svg>
+              <span data-i18n="m.download">التنزيل</span>
+            </div>
+            <div class="m-val"><span class="num">—</span><span class="unit">Mbps</span></div>
+          </div>
+          <div class="metric" id="m-upload">
+            <div class="m-head">
+              <svg viewBox="0 0 24 24" aria-hidden="true" fill="none" stroke="currentColor" stroke-width="1.7" stroke-linecap="round" stroke-linejoin="round"><path d="M12 21V9m0 0 5 5m-5-5-5 5"/><path d="M5 3h14"/></svg>
+              <span data-i18n="m.upload">الرفع</span>
+            </div>
+            <div class="m-val"><span class="num">—</span><span class="unit">Mbps</span></div>
+          </div>
         </div>
-        <div class="metric" id="m-jitter">
-          <div class="m-head">
-            <svg viewBox="0 0 24 24" aria-hidden="true" fill="none" stroke="currentColor" stroke-width="1.7" stroke-linecap="round"><path d="M2 12c1.7-2.6 3.3-2.6 5 0s3.3 2.6 5 0 3.3-2.6 5 0 3.3 2.6 5 0"/></svg>
-            <span data-i18n="m.jitter">التذبذب</span>
+        <div class="m-subs">
+          <div class="metric" id="m-jitter">
+            <div class="m-head">
+              <svg viewBox="0 0 24 24" aria-hidden="true" fill="none" stroke="currentColor" stroke-width="1.7" stroke-linecap="round"><path d="M2 12c1.7-2.6 3.3-2.6 5 0s3.3 2.6 5 0 3.3-2.6 5 0 3.3 2.6 5 0"/></svg>
+              <span data-i18n="m.jitter">التذبذب</span>
+            </div>
+            <div class="m-val"><span class="num">—</span><span class="unit">ms</span></div>
           </div>
-          <div class="m-val"><span class="num">—</span><span class="unit">ms</span></div>
-        </div>
-        <div class="metric" id="m-loss">
-          <div class="m-head">
-            <svg viewBox="0 0 24 24" aria-hidden="true" fill="none" stroke="currentColor" stroke-width="1.7" stroke-linecap="round"><circle cx="12" cy="12" r="9"/><path d="m5.6 5.6 12.8 12.8"/></svg>
-            <span data-i18n="m.loss">فقدان الحزم</span>
+          <div class="metric" id="m-loss">
+            <div class="m-head">
+              <svg viewBox="0 0 24 24" aria-hidden="true" fill="none" stroke="currentColor" stroke-width="1.7" stroke-linecap="round"><circle cx="12" cy="12" r="9"/><path d="m5.6 5.6 12.8 12.8"/></svg>
+              <span data-i18n="m.loss">فقدان الحزم</span>
+            </div>
+            <div class="m-val"><span class="num">—</span><span class="unit">%</span></div>
           </div>
-          <div class="m-val"><span class="num">—</span><span class="unit">%</span></div>
-        </div>
-        <div class="metric" id="m-download">
-          <div class="m-head">
-            <svg viewBox="0 0 24 24" aria-hidden="true" fill="none" stroke="currentColor" stroke-width="1.7" stroke-linecap="round" stroke-linejoin="round"><path d="M12 3v12m0 0 5-5m-5 5-5-5"/><path d="M5 21h14"/></svg>
-            <span data-i18n="m.download">التنزيل</span>
-          </div>
-          <div class="m-val"><span class="num">—</span><span class="unit">Mbps</span></div>
-        </div>
-        <div class="metric" id="m-upload">
-          <div class="m-head">
-            <svg viewBox="0 0 24 24" aria-hidden="true" fill="none" stroke="currentColor" stroke-width="1.7" stroke-linecap="round" stroke-linejoin="round"><path d="M12 21V9m0 0 5 5m-5-5-5 5"/><path d="M5 3h14"/></svg>
-            <span data-i18n="m.upload">الرفع</span>
-          </div>
-          <div class="m-val"><span class="num">—</span><span class="unit">Mbps</span></div>
         </div>
       </section>
 
@@ -316,13 +319,15 @@
     <footer class="foot">
       <div class="foot-side">
         <svg class="foot-mark" viewBox="0 0 64 64" aria-hidden="true">
-            <rect x="3" y="3" width="58" height="58" rx="15" fill="#0f141f" stroke="#232c3f"/>
-            <path d="M 18.57 45.43 A 19 19 0 1 1 45.43 45.43" fill="none" stroke="#22d3ee" stroke-width="6" stroke-linecap="round"/>
-            <line x1="32" y1="32" x2="36.4" y2="16.9" stroke="#e9edf5" stroke-width="4" stroke-linecap="round"/>
-            <circle cx="32" cy="32" r="3" fill="#e9edf5"/>
+            <rect x="3" y="3" width="58" height="58" rx="15" fill="#ffffff" stroke="#dfe3e8"/>
+            <path d="M 18.57 45.43 A 19 19 0 1 1 45.43 45.43" fill="none" stroke="#0aa0cc" stroke-width="6" stroke-linecap="round"/>
+            <line x1="32" y1="32" x2="36.4" y2="16.9" stroke="#20242c" stroke-width="4" stroke-linecap="round"/>
+            <circle cx="32" cy="32" r="3" fill="#20242c"/>
           </svg>
         <span data-i18n="f.tag">أداة مفتوحة المصدر لقياس سرعة الإنترنت</span>
       </div>
+      <span class="foot-sep" aria-hidden="true"></span>
+      <span class="foot-ver" id="foot-ver" title="SPOS Net v8.0.0">v8.0.0</span>
       <span class="foot-sep" aria-hidden="true"></span>
       <span class="foot-font" id="foot-font" title="Rubik" lang="en">Rubik</span>
       <span class="foot-sep" aria-hidden="true"></span>
@@ -515,6 +520,6 @@
 
   <noscript><div class="nojs">يتطلب SPOS Net تفعيل JavaScript لتشغيل اختبار السرعة. — SPOS Net requires JavaScript to run the speed test.</div></noscript>
 
-  <script type="module" src="assets/js/app.js?v=7"></script>
+  <script type="module" src="assets/js/app.js?v=8"></script>
 </body>
 </html>

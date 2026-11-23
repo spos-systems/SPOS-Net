@@ -9,8 +9,8 @@
   "orientation": "any",
   "dir": "rtl",
   "lang": "ar",
-  "background_color": "#070a12",
-  "theme_color": "#070a12",
+  "background_color": "#f2f3f5",
+  "theme_color": "#f2f3f5",
   "categories": ["utilities", "productivity"],
   "shortcuts": [
     {

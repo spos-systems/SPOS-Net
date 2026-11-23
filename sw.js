@@ -1,6 +1,6 @@
-/* SPOS Net v7 service worker — installable PWA with offline app shell.
+/* SPOS Net v8 service worker — installable PWA with offline app shell.
  *
- * Strategy (v7 — "updates land on the first visit"):
+ * Strategy (v7+ — "updates land on the first visit"):
  *   • Precache the app shell (HTML, CSS, JS, icons, manifest).
  *   • Navigations AND code assets (CSS/JS): NETWORK-FIRST — a fresh
  *     deploy is what the user sees on the very next visit, cache is
@@ -12,16 +12,16 @@
  *     APIs) are never intercepted.
  *   • All caches from older versions are purged on activate.
  */
-const VERSION = 'sposnet-v7.0.0';
+const VERSION = 'sposnet-v8.0.0';
 
 const SHELL = [
   './',
   './index.html',
   './manifest.webmanifest',
   './404.html',
-  './assets/css/fonts.css?v=7',
-  './assets/css/style.css?v=7',
-  './assets/js/app.js?v=7',
+  './assets/css/fonts.css?v=8',
+  './assets/css/style.css?v=8',
+  './assets/js/app.js?v=8',
   './assets/js/engine.js',
   './assets/js/gauge.js',
   './assets/js/i18n.js',

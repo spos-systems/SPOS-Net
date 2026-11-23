@@ -8,9 +8,9 @@ const $ = (s, r = document) => r.querySelector(s);
 const $$ = (s, r = document) => [...r.querySelectorAll(s)];
 
 const SITE_URL = 'https://net.spos.ly/';
-const VERSION = '7.0.0';
+const VERSION = '8.0.0';
 
-/* self-hosted webfonts — Rubik is BASE64-INLINED in assets/css/fonts.css (v7):
+/* self-hosted webfonts — Rubik is BASE64-INLINED in assets/css/fonts.css (v8):
  * the font bytes ship inside the stylesheet itself, so no cache layer,
  * service worker, proxy or content blocker can ever block them. */
 const F_DISP = "'Rubik', system-ui, sans-serif";   /* numerals, wordmark, dates */
@@ -122,7 +122,7 @@ function renderConnLine() {
   if (m.org) parts.push(`<b><bdi>${escapeHtml(m.org)}</bdi></b>`);
   const loc = [m.city, m.country].filter(Boolean).join(', ');
   if (loc) parts.push(`<b><bdi>${escapeHtml(loc)}</bdi></b>`);
-  parts.push(`${L === 'ar' ? 'الخادم' : 'Server'}: <b><bdi>Cloudflare${m.colo ? ' · ' + escapeHtml(m.colo) : ''}</bdi></b>`);
+  parts.push(`<bdi>${L === 'ar' ? 'الخادم' : 'Server'}: <b><bdi>Cloudflare${m.colo ? ' · ' + escapeHtml(m.colo) : ''}</bdi></b></bdi>`);
   el.innerHTML = parts.join('<span class="sep">·</span>');
 }
 
@@ -146,14 +146,15 @@ async function initMeta() {
 
 /* ── gauge + readout ─────────────────────────────────────── */
 
-/* each phase owns its needle gradient — download cyan→blue, upload a
-   pure violet family, and the latency phase uses the cyan family too:
-   exactly TWO accent hues on the whole dial, nothing else. */
+/* each phase owns its needle gradient — the v8 "Clarity" light theme
+   uses one saturated hue per phase (amber · cyan · violet) that also
+   colors the metric tiles, so the dial and the tiles read as one
+   instrument. */
 const PHASE_COLORS = {
-  ping: ['#22d3ee', '#3b82f6', '#67e8f9'],
-  download: ['#22d3ee', '#3b82f6', '#67e8f9'],
-  upload: ['#a78bfa', '#8b5cf6', '#c4b5fd'],
-  done: ['#22d3ee', '#3b82f6', '#67e8f9'],
+  ping: ['#f5c242', '#e09612', '#eab52e'],
+  download: ['#29b6f6', '#26c6da', '#26b8d6'],
+  upload: ['#a78bfa', '#7c5ce6', '#8b6cf0'],
+  done: ['#29b6f6', '#26c6da', '#26b8d6'],
 };
 
 function setPhasePill(ph) {
@@ -228,7 +229,7 @@ const SPARK = {
 
     /* faint grid */
     ctx.lineWidth = 1;
-    ctx.strokeStyle = 'rgba(233,237,245,.05)';
+    ctx.strokeStyle = 'rgba(23,24,28,.06)';
     for (const f of [0.25, 0.5, 0.75]) {
       const y = Y(max * f);
       ctx.beginPath(); ctx.moveTo(0, y); ctx.lineTo(w, y); ctx.stroke();
@@ -237,7 +238,7 @@ const SPARK = {
     /* download → upload divider */
     const up = this.marks.find((m) => m[1] === 'upload');
     if (up) {
-      ctx.strokeStyle = 'rgba(233,237,245,.09)';
+      ctx.strokeStyle = 'rgba(23,24,28,.14)';
       ctx.setLineDash([3, 4]);
       ctx.beginPath(); ctx.moveTo(X(up[0]), 0); ctx.lineTo(X(up[0]), h); ctx.stroke();
       ctx.setLineDash([]);
@@ -246,8 +247,8 @@ const SPARK = {
     /* series: download cyan → upload violet — the two curves are
        distinguishable at a glance and match the metric tiles */
     for (const [kind, color, fill] of [
-      ['down', '#22d3ee', 'rgba(34,211,238,.22)'],
-      ['up', '#a78bfa', 'rgba(167,139,250,.16)'],
+      ['down', '#0e9fd1', 'rgba(14,159,209,.15)'],
+      ['up', '#8357e0', 'rgba(131,87,224,.13)'],
     ]) {
       const pts = this.samples.filter((s) => s[1] === kind);
       if (pts.length < 2) continue;
@@ -276,7 +277,7 @@ const SPARK = {
     /* scale label (top-left, always LTR) */
     const unit = t(`u.${settings.unit}`);
     const disp = settings.unit === 'mbytes' ? max / 8 : settings.unit === 'kbps' ? max * 1000 : max;
-    ctx.fillStyle = 'rgba(154,164,184,.75)';
+    ctx.fillStyle = 'rgba(90,98,110,.75)';
     ctx.font = `600 10px ${F_DISP}`;
     ctx.textAlign = 'left';
     ctx.textBaseline = 'alphabetic';
@@ -761,7 +762,7 @@ function drawHistChart(hist) {
   const Y = (v) => h - 6 - (v / max) * (h - 16);
 
   /* grid */
-  ctx.strokeStyle = 'rgba(148,163,194,.09)';
+  ctx.strokeStyle = 'rgba(23,24,28,.07)';
   ctx.lineWidth = 1;
   for (const f of [0.5, 1]) {
     const y = Y(max * f);
@@ -770,8 +771,8 @@ function drawHistChart(hist) {
 
   /* area + line */
   const grad = ctx.createLinearGradient(0, 0, 0, h);
-  grad.addColorStop(0, 'rgba(34,211,238,.28)');
-  grad.addColorStop(1, 'rgba(34,211,238,0)');
+  grad.addColorStop(0, 'rgba(14,159,209,.20)');
+  grad.addColorStop(1, 'rgba(14,159,209,0)');
   ctx.beginPath();
   ctx.moveTo(X(0), Y(data[0].dl));
   data.forEach((d, i) => ctx.lineTo(X(i), Y(d.dl)));
@@ -783,7 +784,7 @@ function drawHistChart(hist) {
 
   ctx.beginPath();
   data.forEach((d, i) => (i ? ctx.lineTo(X(i), Y(d.dl)) : ctx.moveTo(X(i), Y(d.dl))));
-  ctx.strokeStyle = '#22d3ee';
+  ctx.strokeStyle = '#0e9fd1';
   ctx.lineWidth = 2;
   ctx.lineJoin = 'round';
   ctx.stroke();
@@ -793,14 +794,14 @@ function drawHistChart(hist) {
     const last = i === data.length - 1;
     ctx.beginPath();
     ctx.arc(X(i), Y(d.dl), last ? 4 : 2.4, 0, 7);
-    ctx.fillStyle = last ? '#fff' : 'rgba(34,211,238,.55)';
+    ctx.fillStyle = last ? '#0e9fd1' : 'rgba(14,159,209,.5)';
     ctx.fill();
   });
 
   /* max label */
   ctx.direction = 'ltr';
   ctx.font = `600 10px ${F_DISP}`;
-  ctx.fillStyle = 'rgba(154,164,184,.8)';
+  ctx.fillStyle = 'rgba(90,98,110,.8)';
   ctx.textAlign = 'left';
   ctx.textBaseline = 'alphabetic';
   const unit = t(`u.${settings.unit}`);
@@ -1009,7 +1010,7 @@ function drawMark(x, cx, cy, s) {
   x.stroke();
 
   const r = s * 0.30;
-  x.strokeStyle = '#22d3ee';
+  x.strokeStyle = '#29b6f6';
   x.lineWidth = s * 0.095;
   x.lineCap = 'round';
   /* 270° arc: -135°…+135° in gauge convention → 135°…405° canvas */
@@ -1042,8 +1043,8 @@ function drawCardGauge(x, cx, cy, R, frac, lw) {
 
   const a0 = (135 * Math.PI) / 180;
   const a1 = a0 + ((405 - 135) * Math.PI) / 180 * Math.max(0.004, Math.min(1, frac));
-  x.strokeStyle = '#22d3ee';
-  x.shadowColor = 'rgba(34,211,238,.35)';
+  x.strokeStyle = '#29b6f6';
+  x.shadowColor = 'rgba(41,182,246,.35)';
   x.shadowBlur = lw * 1.4;
   x.beginPath();
   x.arc(cx, cy, R, a0, a1);
@@ -1102,10 +1103,10 @@ function drawCard(x, W, H, c, r) {
   x.textBaseline = 'middle';
 
   /* background — one accent hue, two very quiet glows */
-  x.fillStyle = '#0a0e17';
+  x.fillStyle = '#0d1420';
   x.fillRect(0, 0, W, H);
-  blobGrad(x, W * 0.85, H * 0.08, Math.max(W, H) * 0.55, 'rgba(34,211,238,.10)');
-  blobGrad(x, W * 0.10, H * 0.94, Math.max(W, H) * 0.52, 'rgba(129,140,248,.07)');
+  blobGrad(x, W * 0.85, H * 0.08, Math.max(W, H) * 0.55, 'rgba(41,182,246,.12)');
+  blobGrad(x, W * 0.10, H * 0.94, Math.max(W, H) * 0.52, 'rgba(131,87,224,.09)');
 
   const score = scoreOf(r);
   const gradeColor = score.cls === 'good' ? '#34d399' : score.cls === 'mid' ? '#fbbf24' : '#f87171';
@@ -1160,8 +1161,8 @@ function drawCard(x, W, H, c, r) {
   /* ── metric tiles — one deliberate hue per metric, same as the site ── */
   const tiles = [
     [t('m.upload'), fmtSpeed(c.ul), 'Mbps', '#c4b5fd'],
-    [t('m.ping'), fmtMs(c.pg), 'ms', '#fcd34d'],
-    [t('m.jitter'), fmtMs(c.jt), 'ms', '#fda4af'],
+    [t('m.ping'), fmtMs(c.pg), 'ms', '#f5c242'],
+    [t('m.jitter'), fmtMs(c.jt), 'ms', '#cbd5e1'],
     [t('m.loss'), c.ls == null ? '—' : String(c.ls), '%', c.ls != null && c.ls > 1 ? '#f87171' : '#6ee7b7'],
   ];
 
@@ -1219,7 +1220,7 @@ function drawCard(x, W, H, c, r) {
     x.restore();
   }
   run(x, RTL ? 'صولة للأنظمة' : 'SPOS Systems', `700 ${sq || pt_ ? 27 : 29}px ${TXT}`, lcx + dir * (logoS / 2 + 16), fY, RTL ? 'right' : 'left', RTL ? 'rtl' : 'ltr', '#c6cfdf');
-  run(x, 'net.spos.ly', `700 ${sq || pt_ ? 25 : 27}px ${DISP}`, endEdge, fY, RTL ? 'left' : 'right', 'ltr', '#22d3ee');
+  run(x, 'net.spos.ly', `700 ${sq || pt_ ? 25 : 27}px ${DISP}`, endEdge, fY, RTL ? 'left' : 'right', 'ltr', '#29b6f6');
 }
 
 /* make sure every family/weight the card uses is really loaded —
@@ -1502,7 +1503,7 @@ function boot() {
     if (!probe()) {
       const link = document.createElement('link');
       link.rel = 'stylesheet';
-      link.href = `assets/css/fonts.css?v=7&r=${Date.now()}`;
+      link.href = `assets/css/fonts.css?v=8&r=${Date.now()}`;
       document.head.appendChild(link);
       try { await document.fonts.load(`600 16px "${FAM}"`, 'اختبار السرعة 123'); } catch { /* ignore */ }
       try { await document.fonts.ready; } catch { /* ignore */ }
