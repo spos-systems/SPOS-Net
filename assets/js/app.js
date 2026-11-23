@@ -8,13 +8,14 @@ const $ = (s, r = document) => r.querySelector(s);
 const $$ = (s, r = document) => [...r.querySelectorAll(s)];
 
 const SITE_URL = 'https://net.spos.ly/';
-const VERSION = '8.0.0';
+const VERSION = '9.0.0';
 
-/* self-hosted webfonts — Rubik is BASE64-INLINED in assets/css/fonts.css (v8):
- * the font bytes ship inside the stylesheet itself, so no cache layer,
- * service worker, proxy or content blocker can ever block them. */
-const F_DISP = "'Rubik', system-ui, sans-serif";   /* numerals, wordmark, dates */
-const F_TXT = "'Rubik', system-ui, sans-serif";      /* Arabic labels */
+/* self-hosted webfonts — Noto Kufi Arabic (v9): geometric Kufi
+ * letterforms, shipped as two small variable-font files (arabic +
+ * latin subsets) with version-stamped URLs no cache layer can
+ * serve stale. */
+const F_DISP = "'Noto Kufi Arabic', system-ui, sans-serif";   /* numerals, wordmark, dates */
+const F_TXT = "'Noto Kufi Arabic', system-ui, sans-serif";      /* Arabic labels */
 
 const DEFAULTS = { lang: 'ar', unit: 'mbps', duration: 12, streams: 8, loaded: true, loss: true, shareFmt: 'square' };
 
@@ -1486,15 +1487,17 @@ function boot() {
 
   /* ── font watchdog ─────────────────────────────────────────
    * The #1 historical complaint: "the Arabic font never changes".
-   * Server-side everything is correct, so the remaining causes are
-   * client-side (stale proxy/HTTP cache, old WebView, blocked fonts).
-   * Here we (1) wait for the fonts, (2) verify the Arabic glyphs of the
-   * family really loaded, (3) if not, re-inject the stylesheet once with
-   * a cache-busting query that defeats every caching layer, and (4) name
-   * the ACTIVE font in the footer + about drawer so the state is visible
-   * at a glance — no DevTools needed. */
+   * Root cause found in v9: the previous families DID load and DID
+   * render, but their naskh letterforms were perceptually identical
+   * to the OS default (0.6% pixel difference). v9 switched to a
+   * geometric Kufi family — visibly different at every size.
+   * The watchdog still (1) waits for the fonts, (2) verifies the
+   * Arabic glyphs really loaded, (3) re-injects the stylesheet once
+   * with a cache-busting query if not, and (4) names the ACTIVE
+   * font in the footer + about drawer so the state is visible at a
+   * glance — no DevTools needed. */
   (async () => {
-    const FAM = 'Rubik';
+    const FAM = 'Noto Kufi Arabic';
     const probe = () => {
       try { return document.fonts.check(`600 16px "${FAM}"`, 'اختبار السرعة 123'); }
       catch { return false; }
@@ -1503,7 +1506,7 @@ function boot() {
     if (!probe()) {
       const link = document.createElement('link');
       link.rel = 'stylesheet';
-      link.href = `assets/css/fonts.css?v=8&r=${Date.now()}`;
+      link.href = `assets/css/fonts.css?v=9&r=${Date.now()}`;
       document.head.appendChild(link);
       try { await document.fonts.load(`600 16px "${FAM}"`, 'اختبار السرعة 123'); } catch { /* ignore */ }
       try { await document.fonts.ready; } catch { /* ignore */ }
@@ -1513,9 +1516,9 @@ function boot() {
     const foot = $('#foot-font');
     if (foot) {
       foot.classList.add(ok ? 'ok' : 'bad');
-      foot.textContent = ok ? FAM : (getLang() === 'ar' ? 'خط النظام (فشل تحميل الخط)' : 'System font (custom font failed)');
+      foot.textContent = ok ? 'Noto Kufi Arabic' : (getLang() === 'ar' ? 'خط النظام (فشل تحميل الخط)' : 'System font (custom font failed)');
       foot.title = ok
-        ? (getLang() === 'ar' ? 'الخط النشط: Rubik — مضمّن داخل ملف التنسيق ذاته' : 'Active font: Rubik — inlined in the stylesheet itself')
+        ? (getLang() === 'ar' ? 'الخط النشط: نوتو كوفي عربي — خط هندسي مربّع الشكل' : 'Active font: Noto Kufi Arabic — geometric Kufi style')
         : (getLang() === 'ar' ? 'تعذّر تحميل الخط المخصص، يُستخدم خط النظام' : 'Custom font failed to load; system font in use');
     }
     const tag = $('#font-tag');

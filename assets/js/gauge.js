@@ -1,6 +1,6 @@
-/* SPOS Net — speed gauge (v8, light "Clarity" theme)
- * 270° dial, piecewise scale, thin ink needle with exponential
- * smoothing, flat gradient value arc (no glow — the light theme
+/* SPOS Net — speed gauge (v9, dark "Clarity" theme)
+ * 270° dial, piecewise scale, light ink needle with exponential
+ * smoothing, flat gradient value arc (no glow — the dark theme
  * reads clean), tip dot and a dim resting state for the pre-start
  * screen. The dial is driven by the SAME smoothed figure the
  * readout and tiles show, so all three always agree.
@@ -74,7 +74,7 @@ export class Gauge {
       const label = el('text', {
         x: lx, y: ly, 'text-anchor': 'middle', 'dominant-baseline': 'middle',
         fill: 'var(--tick-label)', 'font-size': '15',
-        'font-family': "'Rubik', ui-monospace, monospace",
+        'font-family': "'Noto Kufi Arabic', ui-monospace, monospace",
         'font-weight': '600',
       }, tickG);
       label.textContent = String(SEGS[i]);
@@ -107,7 +107,7 @@ export class Gauge {
     const [nx1, ny1] = pt(78, 0), [nx2, ny2] = pt(R - 16, 0);
     el('line', {
       x1: nx1, y1: ny1, x2: nx2, y2: ny2,
-      stroke: '#1a1e26', 'stroke-width': '4.4', 'stroke-linecap': 'round',
+      stroke: '#e8edf5', 'stroke-width': '4.4', 'stroke-linecap': 'round',
     }, this.needle);
     this.hubDot = el('circle', { cx: CX, cy: CY, r: '0', fill: '#26b8d6' }, this.needle);
   }
